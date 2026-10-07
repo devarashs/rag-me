@@ -6,9 +6,11 @@ authors = [{ name = "Arash Salehkhah" }]
 license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.120",
     "google-genai>=2.28",
     "markdown-it-py>=3",
     "pgvector>=0.5",
+    "psycopg-pool>=3.2",
     "psycopg[binary]>=3.3",
     "pydantic-settings>=2",
 ]
@@ -25,6 +27,7 @@ dev = [
     "alembic>=1.20",
     "pytest>=9.1.1",
     "ruff>=0.16.10",
+    "uvicorn>=0.30",
 ]
 
 [tool.ruff]
