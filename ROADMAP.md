@@ -42,12 +42,17 @@ current item.
       Result: `web/`, served via `app.frontend()`. Streams answers, shows cited
       sources, handles loading, empty, error, cut-off and rate-limited states;
       light and dark themes meet WCAG AA; checked at 375px and desktop.
-- [ ] Deployed on Vercel from GitHub, secrets in Vercel environment settings  <-- next
-      Assumption: Vercel Hobby. Revisit if Python cold starts or limits bite.
+- [x] Deployed on Vercel from GitHub, secrets in Vercel environment settings
+      Result: https://rag-me.vercel.app (Hobby plan; pushes to main deploy).
+      Function runs in iad1 next to Neon us-east-1; page assets served from the
+      CDN. Measured from a local machine via the fra1 edge: ~0.95s to the sources event, 0.7s for an
+      off-topic refusal; first answer words depend on Gemini (0.9-8s observed).
+      Per-deployment URLs sit behind Vercel Deployment Protection; share the
+      production domain.
 
 ## Phase 3: measure
 
-- [ ] Evaluation set of ~30 questions, including ones the bot must decline (personal
+- [ ] Evaluation set of ~30 questions  <-- next, including ones the bot must decline (personal
       details the knowledge base does not cover), scoring retrieval hit
       rate and answer faithfulness; baseline recorded
 - [ ] The rag-me section of `data/07-ai-engineering.md` describes the real stack
