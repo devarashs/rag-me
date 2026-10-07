@@ -33,9 +33,12 @@ current item.
 
 ## Phase 2: online
 
-- [ ] `POST /api/ask` validates input, streams the answer, and enforces a
-      per-visitor rate limit plus a global daily cap stored in Postgres  <-- next
-- [ ] A single chat page, plain HTML and JS, served by the same app
+- [x] `POST /api/ask` validates input, streams the answer, and enforces a
+      per-visitor rate limit plus a global daily cap stored in Postgres
+      Result: Server-Sent Events (sources, delta, done/error); Problem Details for
+      422/429/503; 10 questions per visitor per 10 minutes, 200 per UTC day; IPs
+      stored only as HMACs. Run locally: `uv run uvicorn app:app --reload`.
+- [ ] A single chat page  <-- next, plain HTML and JS, served by the same app
 - [ ] Deployed on Vercel from GitHub, secrets in Vercel environment settings
       Assumption: Vercel Hobby. Revisit if Python cold starts or limits bite.
 
