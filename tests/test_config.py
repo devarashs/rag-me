@@ -1,6 +1,6 @@
 import pytest
 
-from rag_me.config import ConfigurationError, load_settings
+from rag_me.config import ApiSettings, ConfigurationError, load_settings
 
 FAKE_API_KEY = "test-key-not-a-real-secret"
 FAKE_DATABASE_URL = "postgresql://user:not-a-real-password@db.example.test/rag"
@@ -14,6 +14,11 @@ CONFIG_VARIABLES = [
     "RETRIEVAL_TOP_K",
     "MIN_SIMILARITY",
     "CONTACT_EMAIL",
+    "RATE_LIMIT_HASH_KEY",
+    "VISITOR_RATE_LIMIT_REQUESTS",
+    "VISITOR_RATE_LIMIT_WINDOW_SECONDS",
+    "DAILY_QUESTION_CAP",
+    "CLIENT_IP_HEADER",
 ]
 
 
@@ -195,3 +200,66 @@ def test_settings_repr_masks_secrets(valid_environment) -> None:
     for text in (repr(settings), str(settings)):
         assert FAKE_API_KEY not in text
         assert "not-a-real-password" not in text
+
+
+# --- ApiSettings ------------------------------------------------------------------
+
+FAKE_HASH_KEY = "k" * 32
+
+
+def test_cli_settings_do_not_require_the_rate_limit_key(valid_environment) -> None:
+    load_settings(_env_file=None)
+
+
+def test_api_settings_require_the_rate_limit_key(valid_environment) -> None:
+    valid_environment.delenv("RATE_LIMIT_HASH_KEY", raising=False)
+
+    with pytest.raises(ConfigurationError, match="RATE_LIMIT_HASH_KEY: Field required"):
+        load_settings(ApiSettings, _env_file=None)
+
+
+def test_api_settings_defaults(valid_environment) -> None:
+    valid_environment.setenv("RATE_LIMIT_HASH_KEY", FAKE_HASH_KEY)
+
+    settings = load_settings(ApiSettings, _env_file=None)
+
+    assert settings.visitor_rate_limit_requests == 10
+    assert settings.visitor_rate_limit_window_seconds == 600
+    assert settings.daily_question_cap == 200
+    assert settings.client_ip_header is None
+    assert FAKE_HASH_KEY not in repr(settings)
+
+
+def test_short_rate_limit_key_is_rejected(valid_environment) -> None:
+    valid_environment.setenv("RATE_LIMIT_HASH_KEY", "k" * 31)
+
+    with pytest.raises(ConfigurationError, match="RATE_LIMIT_HASH_KEY"):
+        load_settings(ApiSettings, _env_file=None)
+
+
+@pytest.mark.parametrize(
+    ("raw_header", "expected"),
+    [("X-Vercel-Forwarded-For", "x-vercel-forwarded-for"), ("  ", None), ("", None)],
+)
+def test_client_ip_header_is_normalized(valid_environment, raw_header: str, expected) -> None:
+    valid_environment.setenv("RATE_LIMIT_HASH_KEY", FAKE_HASH_KEY)
+    valid_environment.setenv("CLIENT_IP_HEADER", raw_header)
+
+    assert load_settings(ApiSettings, _env_file=None).client_ip_header == expected
+
+
+@pytest.mark.parametrize(
+    ("variable", "value"),
+    [
+        ("VISITOR_RATE_LIMIT_REQUESTS", "0"),
+        ("VISITOR_RATE_LIMIT_WINDOW_SECONDS", "0"),
+        ("VISITOR_RATE_LIMIT_WINDOW_SECONDS", "86401"),
+        ("DAILY_QUESTION_CAP", "0"),
+    ],
+)
+def test_invalid_rate_limits_are_rejected(valid_environment, variable: str, value: str) -> None:
+    valid_environment.setenv("RATE_LIMIT_HASH_KEY", FAKE_HASH_KEY)
+    valid_environment.setenv(variable, value)
+
+    with pytest.raises(ConfigurationError, match=variable):
+        load_settings(ApiSettings, _env_file=None)

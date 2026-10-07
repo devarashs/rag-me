@@ -97,11 +97,55 @@ class Settings(BaseSettings):
         return value
 
 
-def load_settings(**overrides: object) -> Settings:
+class ApiSettings(Settings):
+    """Settings the public HTTP API needs on top of the shared ones.
+
+    Kept separate so the local CLI does not demand a rate-limit secret it never
+    uses.
+    """
+
+    rate_limit_hash_key: SecretStr = Field(
+        min_length=32,
+        description="Secret for HMAC-ing visitor IPs in rate-limit counters. Generate "
+        'with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.',
+    )
+    visitor_rate_limit_requests: int = Field(
+        default=10, ge=1, description="Questions one visitor may ask per window."
+    )
+    visitor_rate_limit_window_seconds: int = Field(
+        default=600, ge=1, le=86_400, description="Length of the per-visitor window."
+    )
+    daily_question_cap: int = Field(
+        # Each question spends one embedding and one generation request. Keep this
+        # under the Gemini free-tier daily limits shown in AI Studio.
+        default=200,
+        ge=1,
+        description="Questions answered per UTC day across all visitors.",
+    )
+    client_ip_header: str | None = Field(
+        default=None,
+        description="Header holding the real client IP, set by a trusted proxy. On "
+        "Vercel: x-vercel-forwarded-for. Unset: use the socket peer address. Never "
+        "set this to a header clients can forge.",
+    )
+
+    @field_validator("client_ip_header")
+    @classmethod
+    def normalize_header_name(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        return value.strip().lower()
+
+
+def load_settings[SettingsT: Settings](
+    settings_class: type[SettingsT] = Settings,  # type: ignore[assignment]
+    **overrides: object,
+) -> SettingsT:
     """Load and validate settings from the environment and `.env`.
 
     Args:
-        overrides: Keyword arguments passed straight to `Settings`, for tests
+        settings_class: `Settings` for the CLI, `ApiSettings` for the HTTP API.
+        overrides: Keyword arguments passed straight to the class, for tests
             (for example `_env_file=None` to ignore the real `.env`).
 
     Returns:
@@ -112,7 +156,7 @@ def load_settings(**overrides: object) -> Settings:
             message lists each problem by environment variable name.
     """
     try:
-        return Settings(**overrides)  # type: ignore[arg-type]
+        return settings_class(**overrides)  # type: ignore[arg-type]
     except ValidationError as error:
         # Pydantic's own message echoes the rejected input, which here would be
         # a secret. Rebuild the message from field locations and reasons only.

@@ -2,8 +2,16 @@
 
 import psycopg
 from pgvector.psycopg import register_vector
+from psycopg_pool import ConnectionPool
 
 CONNECT_TIMEOUT_SECONDS = 15
+
+# Settings shared by single connections and pooled ones; see `connect` for why.
+_CONNECTION_OPTIONS = {
+    "autocommit": True,
+    "prepare_threshold": None,
+    "connect_timeout": CONNECT_TIMEOUT_SECONDS,
+}
 
 
 def connect(database_url: str) -> psycopg.Connection:
@@ -28,18 +36,33 @@ def connect(database_url: str) -> psycopg.Connection:
     # explicitly bounded transaction. Without it psycopg opens an implicit
     # transaction on the first query (register_vector's type lookup), and later
     # transaction blocks silently become savepoints inside it.
-    connection = psycopg.connect(
-        database_url,
-        autocommit=True,
-        prepare_threshold=None,
-        connect_timeout=CONNECT_TIMEOUT_SECONDS,
-    )
+    connection = psycopg.connect(database_url, **_CONNECTION_OPTIONS)
     try:
         register_vector(connection)
     except Exception:
         connection.close()
         raise
     return connection
+
+
+def create_connection_pool(database_url: str, max_size: int = 4) -> ConnectionPool:
+    """Create a closed connection pool for the HTTP API; call `.open()` to start it.
+
+    `min_size=0` keeps no idle connections open, so Neon's free-tier compute can
+    still scale to zero between visitors. Connections are checked before use
+    because Neon drops idle ones when it suspends, and a pooled connection
+    from before the suspension would otherwise fail on first query.
+    """
+    return ConnectionPool(
+        database_url,
+        min_size=0,
+        max_size=max_size,
+        kwargs=_CONNECTION_OPTIONS,
+        configure=register_vector,
+        check=ConnectionPool.check_connection,
+        timeout=CONNECT_TIMEOUT_SECONDS,
+        open=False,
+    )
 
 
 def sqlalchemy_url(database_url: str) -> str:
