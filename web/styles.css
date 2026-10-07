@@ -164,34 +164,33 @@ svg {
 /* --- avatar ------------------------------------------------------------------ */
 
 .avatar {
-  display: grid;
-  place-items: center;
+  display: block;
   flex-shrink: 0;
   border-radius: var(--radius-full);
+  object-fit: cover;
+  /* Shown only while the photo loads, or if it fails to. */
   background: var(--gradient-brand);
-  color: #ffffff; /* white on the brand gradient, both themes: at least 5:1 at either stop */
-  font-weight: 650;
-  letter-spacing: 0.02em;
 }
 
 .avatar--large {
   width: 52px;
   height: 52px;
-  font-size: var(--text-lg);
-  box-shadow: var(--shadow-accent);
+  box-shadow:
+    0 0 0 3px var(--color-surface),
+    var(--shadow-accent);
 }
 
 .avatar--small {
   width: 32px;
   height: 32px;
-  font-size: var(--text-xs);
+  box-shadow: 0 0 0 2px var(--color-surface);
 }
 
 /* --- profile header ---------------------------------------------------------- */
 
 .profile {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-4);
 }
 
@@ -212,6 +211,28 @@ svg {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+.profile-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.profile-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.profile-links svg {
+  width: 14px;
+  height: 14px;
 }
 
 .status-badge {
