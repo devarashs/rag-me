@@ -1,0 +1,51 @@
+[project]
+name = "rag-me"
+version = "0.1.0"
+description = "A retrieval-augmented question-answering bot about Arash Salehkhah, built without a RAG framework."
+authors = [{ name = "Arash Salehkhah" }]
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "google-genai>=2.28",
+    "markdown-it-py>=3",
+    "pgvector>=0.5",
+    "psycopg[binary]>=3.3",
+    "pydantic-settings>=2",
+]
+
+[project.scripts]
+rag-me = "rag_me.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "alembic>=1.20",
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear: likely bugs and design problems
+    "UP",  # pyupgrade: modern syntax for the target version
+    "SIM", # simplifications
+    "RUF", # ruff-specific rules
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers"]
+markers = [
+    "integration: needs a real Postgres (DATABASE_URL); creates and drops a throwaway schema",
+]
