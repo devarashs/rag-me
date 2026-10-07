@@ -47,6 +47,8 @@ from rag_me.store import PostgresChunkStore, RetrievedChunk
 
 DEFAULT_KNOWLEDGE_BASE_DIR = Path("data")
 DEFAULT_EVAL_CASES = Path("evals/cases.toml")
+# Git-ignored: cases whose questions name topics that should not be published.
+PRIVATE_EVAL_CASES = Path("evals/private-cases.toml")
 DEFAULT_EVAL_RESULTS_DIR = Path("evals/results")
 # Stronger than the default answering model, so it can catch that model's mistakes.
 DEFAULT_JUDGE_MODEL = "gemini-3.8-flash"
@@ -90,7 +92,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     eval_parser = commands.add_parser("eval", help="grade the bot against evals/cases.toml")
     _add_data_dir_argument(eval_parser)
-    eval_parser.add_argument("--cases", type=Path, default=DEFAULT_EVAL_CASES)
+    eval_parser.add_argument(
+        "--cases",
+        type=Path,
+        nargs="+",
+        default=None,
+        help=f"case files (default: {DEFAULT_EVAL_CASES}, plus {PRIVATE_EVAL_CASES} if present)",
+    )
     eval_parser.add_argument("--output-dir", type=Path, default=DEFAULT_EVAL_RESULTS_DIR)
     eval_parser.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL)
     eval_parser.add_argument(
@@ -191,7 +199,14 @@ def ask(question: str, settings: Settings, *, verbose: bool) -> None:
 def run_evaluation(arguments: argparse.Namespace, settings: Settings) -> None:
     """Run the eval cases, print progress and the report, and save results as JSON."""
     known_chunk_ids = [chunk.chunk_id for chunk in load_knowledge_base_chunks(arguments.data_dir)]
-    cases = load_eval_cases(arguments.cases, known_chunk_ids)
+    case_files = arguments.cases or [
+        path for path in (DEFAULT_EVAL_CASES, PRIVATE_EVAL_CASES) if path.exists()
+    ]
+    cases = [case for path in case_files for case in load_eval_cases(path, known_chunk_ids)]
+    case_ids = [case.id for case in cases]
+    duplicate_ids = sorted({case_id for case_id in case_ids if case_ids.count(case_id) > 1})
+    if duplicate_ids:
+        raise EvalCaseError(f"case ids appear in more than one file: {duplicate_ids}")
     only_ids = {case_id.strip() for case_id in arguments.only.split(",") if case_id.strip()}
     if only_ids:
         unknown = only_ids - {case.id for case in cases}

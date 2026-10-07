@@ -22,3 +22,9 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# Private material: personal notes, eval cases that name unpublished topics, and
+# eval results (which include those cases' questions and answers).
+private/
+evals/private-cases.toml
+evals/results/

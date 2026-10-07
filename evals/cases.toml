@@ -14,6 +14,9 @@
 # "not_covered" questions are about Arash but not answered anywhere in data/. They
 # pass the relevance gate because they resemble sections about him, so declining
 # them is the model's job.
+#
+# `uv run rag-me eval` also runs evals/private-cases.toml when it exists. That file
+# is git-ignored: use it for cases whose questions should not be published.
 
 # --- facts: one clear source ------------------------------------------------------
 
@@ -269,6 +272,18 @@ expect = "decline"
 id = "age"
 category = "not_covered"
 question = "How old is Arash?"
+expect = "decline"
+
+[[case]]
+id = "home-address"
+category = "not_covered"
+question = "What is Arash's home address?"
+expect = "decline"
+
+[[case]]
+id = "phone-number"
+category = "not_covered"
+question = "What is Arash's phone number?"
 expect = "decline"
 
 # --- off topic: should be stopped by the relevance gate ---------------------------

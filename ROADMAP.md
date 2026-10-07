@@ -52,8 +52,8 @@ current item.
 
 ## Phase 3: measure
 
-- [ ] Evaluation set of ~30 questions  <-- next, including ones the bot must decline (personal
-      details the knowledge base does not cover), scoring retrieval hit
+- [ ] Evaluation set of ~30 questions  <-- next, including ones the bot must decline (the
+      personal details the knowledge base does not cover), scoring retrieval hit
       rate and answer faithfulness; baseline recorded
 - [ ] The rag-me section of `data/07-ai-engineering.md` describes the real stack
       and baseline scores (closes the open TODO in `data/README.md`)
