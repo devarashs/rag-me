@@ -5,18 +5,20 @@
 // EventSource cannot send, so the stream is read with fetch and parsed here.
 // Event contract: see the module docstring in src/rag_me/api.py.
 //
-// All answer and source text is inserted with textContent, never innerHTML, so
-// nothing the model or a visitor writes can become markup on this page.
+// All answer and source text is inserted with textContent or text nodes, never
+// innerHTML, so nothing the model or a visitor writes can become markup here.
 
 "use strict";
 
 const MAX_QUESTION_LENGTH = 500;
+// Matches citations such as [2] and [1, 3] in the model's answer.
+const CITATION_PATTERN = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
 
 const form = document.getElementById("ask-form");
 const questionInput = document.getElementById("question");
 const askButton = document.getElementById("ask-button");
 const conversation = document.getElementById("conversation");
-const suggestions = document.getElementById("suggestions");
+const welcome = document.getElementById("welcome");
 const exchangeTemplate = document.getElementById("exchange-template");
 const hint = document.getElementById("hint");
 const defaultHintText = hint.textContent;
@@ -42,9 +44,9 @@ questionInput.addEventListener("input", () => {
   clearInputError();
 });
 
-suggestions.addEventListener("click", (event) => {
+welcome.addEventListener("click", (event) => {
   const suggestion = event.target.closest(".suggestion");
-  if (suggestion) submitQuestion(suggestion.textContent);
+  if (suggestion) submitQuestion(suggestion.dataset.question);
 });
 
 // --- flow -----------------------------------------------------------------------
@@ -59,7 +61,7 @@ async function submitQuestion(rawQuestion) {
   }
 
   setAnswering(true);
-  suggestions.hidden = true;
+  welcome.hidden = true;
   questionInput.value = "";
   resizeQuestionInput();
   const exchange = createExchange(question);
@@ -86,14 +88,19 @@ async function submitQuestion(rawQuestion) {
 
 async function readAnswerStream(response, exchange) {
   let sources = [];
+  let answerText = "";
   let receivedTerminalEvent = false;
 
   for await (const { event, data } of readServerSentEvents(response.body)) {
     if (event === "sources") {
       sources = data.sources;
+      exchange.thinkingLabel.textContent = "Writing an answer…";
     } else if (event === "delta") {
       exchange.thinking.hidden = true;
-      exchange.answerText.textContent += data.text;
+      answerText += data.text;
+      // Re-rendered whole on each piece: a citation like "[1, 3]" can arrive
+      // split across pieces, and answers are short enough for this to be cheap.
+      renderAnswerText(exchange.answerText, answerText, sources);
     } else if (event === "done") {
       showCitedSources(exchange, sources, data.cited);
       receivedTerminalEvent = true;
@@ -166,6 +173,7 @@ function createExchange(question) {
     answer: element.querySelector(".answer"),
     answerText: element.querySelector(".answer-text"),
     thinking: element.querySelector(".thinking"),
+    thinkingLabel: element.querySelector(".thinking-label"),
     sources: element.querySelector(".sources"),
   };
   element.querySelector(".question-bubble").textContent = question;
@@ -174,26 +182,72 @@ function createExchange(question) {
   return exchange;
 }
 
+// Replaces the container's content with `text`, turning each valid citation
+// number into a chip. Numbers that match no source stay as plain text.
+function renderAnswerText(container, text, sources) {
+  const sourcesByNumber = new Map(sources.map((source) => [source.number, source]));
+  const nodes = [];
+  let lastIndex = 0;
+  for (const match of text.matchAll(CITATION_PATTERN)) {
+    const numbers = match[1].split(",").map((part) => Number(part.trim()));
+    if (!numbers.every((number) => sourcesByNumber.has(number))) continue;
+    nodes.push(document.createTextNode(text.slice(lastIndex, match.index)));
+    for (const number of numbers) nodes.push(createCitationChip(sourcesByNumber.get(number)));
+    lastIndex = match.index + match[0].length;
+  }
+  nodes.push(document.createTextNode(text.slice(lastIndex)));
+  container.replaceChildren(...nodes);
+}
+
+function createCitationChip(source) {
+  const chip = document.createElement("span");
+  chip.className = "cite";
+  chip.title = source.section_heading;
+  const label = document.createElement("span");
+  label.className = "visually-hidden";
+  label.textContent = "source ";
+  chip.append(label, String(source.number));
+  return chip;
+}
+
 function showCitedSources(exchange, sources, citedNumbers) {
   const cited = citedNumbers
     .map((number) => sources.find((source) => source.number === number))
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((first, second) => first.number - second.number);
   if (cited.length === 0) return;
 
-  exchange.sources.querySelector("summary").textContent =
+  exchange.sources.querySelector(".sources-label").textContent =
     cited.length === 1 ? "1 source" : `${cited.length} sources`;
   const list = exchange.sources.querySelector(".source-list");
-  for (const source of cited) {
-    const item = document.createElement("li");
-    item.value = source.number; // keeps the list number equal to the [n] in the text
-    item.textContent = source.title;
-    list.append(item);
-  }
+  for (const source of cited) list.append(createSourceCard(source));
   exchange.sources.hidden = false;
+}
+
+function createSourceCard(source) {
+  const item = document.createElement("li");
+  item.className = "source";
+
+  const number = document.createElement("span");
+  number.className = "cite source-number";
+  number.textContent = String(source.number);
+
+  const text = document.createElement("span");
+  const heading = document.createElement("span");
+  heading.className = "source-heading";
+  heading.textContent = source.section_heading;
+  const documentTitle = document.createElement("span");
+  documentTitle.className = "source-document";
+  documentTitle.textContent = source.document_title;
+  text.append(heading, documentTitle);
+
+  item.append(number, text);
+  return item;
 }
 
 function showExchangeError(exchange, message) {
   exchange.answer.classList.add("is-error");
+  exchange.thinking.hidden = true;
   exchange.answerText.textContent = message;
   exchange.sources.hidden = true;
 }
@@ -219,7 +273,7 @@ function clearInputError() {
 function setAnswering(answering) {
   isAnswering = answering;
   askButton.disabled = answering;
-  askButton.textContent = answering ? "Answering…" : "Ask";
+  askButton.setAttribute("aria-label", answering ? "Answering…" : "Send question");
 }
 
 function resizeQuestionInput() {
