@@ -130,3 +130,70 @@ def test_full_ingest_round_trip_against_postgres(migrated_schema_connection) -> 
     assert second.plan.deleted_ids == ["a.md#z"]
     assert second_embedder.embedded_batches == [[]]
     assert sorted(store.fetch_embedding_input_hashes()) == ["a.md#x", "a.md#y"]
+
+
+# --- search ---------------------------------------------------------------------
+
+
+def direction(x: float, y: float) -> list[float]:
+    """A vector in the first two dimensions, zero elsewhere."""
+    return [x, y] + [0.0] * (EMBEDDING_DIMENSIONS - 2)
+
+
+def embedded_with_vector(chunk_id: str, vector: list[float]) -> EmbeddedChunk:
+    return EmbeddedChunk(
+        chunk=Chunk(chunk_id, chunk_id.split("#")[0], "Doc", "Heading", f"Body of {chunk_id}."),
+        embedding_model="model",
+        embedding_input_hash="h",
+        embedding=vector,
+    )
+
+
+@pytest.fixture
+def store_with_three_directions(migrated_schema_connection) -> PostgresChunkStore:
+    store = PostgresChunkStore(migrated_schema_connection)
+    rows = {
+        "a.md#same": direction(1.0, 0.0),
+        "a.md#diagonal": direction(1.0, 1.0),
+        "a.md#opposite": direction(-1.0, 0.0),
+    }
+    store.sync([embedded_with_vector(i, v) for i, v in rows.items()], keep_ids=list(rows))
+    return store
+
+
+def test_search_orders_by_cosine_similarity(store_with_three_directions) -> None:
+    results = store_with_three_directions.search(direction(1.0, 0.0), limit=3)
+
+    assert [result.chunk.chunk_id for result in results] == [
+        "a.md#same",
+        "a.md#diagonal",
+        "a.md#opposite",
+    ]
+    assert [result.similarity for result in results] == pytest.approx([1.0, 0.7071, -1.0], abs=1e-3)
+
+
+def test_search_returns_full_chunk_content(store_with_three_directions) -> None:
+    [top] = store_with_three_directions.search(direction(1.0, 0.0), limit=1)
+
+    assert top.chunk == Chunk("a.md#same", "a.md", "Doc", "Heading", "Body of a.md#same.")
+
+
+def test_search_similarity_ignores_vector_length(store_with_three_directions) -> None:
+    [top] = store_with_three_directions.search(direction(5.0, 0.0), limit=1)
+
+    assert top.similarity == pytest.approx(1.0, abs=1e-6)
+
+
+def test_search_limit_caps_results(store_with_three_directions) -> None:
+    assert len(store_with_three_directions.search(direction(1.0, 0.0), limit=2)) == 2
+    assert len(store_with_three_directions.search(direction(1.0, 0.0), limit=50)) == 3
+
+
+@pytest.mark.parametrize("limit", [0, -1, 51])
+def test_search_rejects_out_of_range_limit(migrated_schema_connection, limit: int) -> None:
+    with pytest.raises(ValueError, match="limit must be between 1 and 50"):
+        PostgresChunkStore(migrated_schema_connection).search(direction(1.0, 0.0), limit=limit)
+
+
+def test_search_on_empty_table_returns_nothing(migrated_schema_connection) -> None:
+    assert PostgresChunkStore(migrated_schema_connection).search(direction(1.0, 0.0), limit=5) == []

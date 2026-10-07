@@ -21,6 +21,19 @@ class EmbeddedChunk:
 
 
 @dataclass(frozen=True, slots=True)
+class RetrievedChunk:
+    """A stored chunk returned by a similarity search.
+
+    Attributes:
+        chunk: The stored section.
+        similarity: Cosine similarity to the query, from -1 to 1; higher is closer.
+    """
+
+    chunk: Chunk
+    similarity: float
+
+
+@dataclass(frozen=True, slots=True)
 class SyncResult:
     """What `ChunkStore.sync` changed."""
 
@@ -40,8 +53,19 @@ class ChunkStore(Protocol):
         ...
 
 
+class ChunkSearcher(Protocol):
+    """What answering needs from storage. `PostgresChunkStore` is the real one."""
+
+    def search(self, query_embedding: Sequence[float], limit: int) -> list[RetrievedChunk]:
+        """Return up to `limit` chunks, most similar first."""
+        ...
+
+
+MAX_SEARCH_LIMIT = 50
+
+
 class PostgresChunkStore:
-    """`ChunkStore` on a psycopg connection with pgvector registered.
+    """`ChunkStore` and `ChunkSearcher` on a psycopg connection with pgvector registered.
 
     Args:
         connection: From `rag_me.database.connect`. The caller owns and closes it.
@@ -58,6 +82,43 @@ class PostgresChunkStore:
                 "SELECT chunk_id, embedding_input_hash FROM knowledge_chunks"
             ).fetchall()
         return {chunk_id: input_hash for chunk_id, input_hash in rows}
+
+    def search(self, query_embedding: Sequence[float], limit: int) -> list[RetrievedChunk]:
+        """Return the `limit` chunks closest to `query_embedding` by cosine distance.
+
+        `<=>` is pgvector's cosine distance (0 = same direction), so similarity is
+        `1 - distance`. With no ANN index this is an exact scan, which is right
+        at this table's size (see the migration).
+
+        Raises:
+            ValueError: If `limit` is outside 1..MAX_SEARCH_LIMIT.
+        """
+        if not 1 <= limit <= MAX_SEARCH_LIMIT:
+            raise ValueError(f"limit must be between 1 and {MAX_SEARCH_LIMIT}, got {limit}")
+        query_vector = Vector(list(query_embedding))
+        rows = self._connection.execute(
+            """
+            SELECT chunk_id, source_path, document_title, section_heading, body,
+                   1 - (embedding <=> %(query)s) AS similarity
+            FROM knowledge_chunks
+            ORDER BY embedding <=> %(query)s, chunk_id
+            LIMIT %(limit)s
+            """,
+            {"query": query_vector, "limit": limit},
+        ).fetchall()
+        return [
+            RetrievedChunk(
+                chunk=Chunk(
+                    chunk_id=chunk_id,
+                    source_path=source_path,
+                    document_title=document_title,
+                    section_heading=section_heading,
+                    body=body,
+                ),
+                similarity=float(similarity),
+            )
+            for chunk_id, source_path, document_title, section_heading, body, similarity in rows
+        ]
 
     def sync(self, upserts: Sequence[EmbeddedChunk], keep_ids: Sequence[str]) -> SyncResult:
         """Write all changes in one transaction, so readers never see a half-ingest.

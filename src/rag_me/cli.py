@@ -6,6 +6,7 @@ Commands:
                   review what would be embedded before spending any quota.
     ingest        Embed new and changed chunks and store them in Postgres;
                   remove chunks whose sections were deleted.
+    ask           Answer a question from the stored chunks, citing sources.
 """
 
 import argparse
@@ -16,18 +17,25 @@ from pathlib import Path
 import psycopg
 from google.genai import errors as genai_errors
 
+from rag_me.answering import InvalidQuestionError, answer_question, extract_cited_source_numbers
 from rag_me.chunking import Chunk, KnowledgeBaseError, load_knowledge_base_chunks
-from rag_me.config import ConfigurationError, load_settings
+from rag_me.config import ConfigurationError, Settings, load_settings
 from rag_me.database import connect
 from rag_me.embeddings import EmbeddingError, GeminiEmbedder, create_gemini_client
+from rag_me.generation import GeminiGenerator
 from rag_me.ingest import IngestReport, run_ingest
-from rag_me.store import PostgresChunkStore
+from rag_me.store import PostgresChunkStore, RetrievedChunk
 
 DEFAULT_KNOWLEDGE_BASE_DIR = Path("data")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse arguments, run the chosen command, and return its exit code."""
+    # Answers contain characters such as en dashes. When output is piped on
+    # Windows, Python would otherwise encode with the ANSI code page and crash.
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+
     parser = argparse.ArgumentParser(prog="rag-me", description=__doc__.splitlines()[0])
     commands = parser.add_subparsers(dest="command", required=True)
 
@@ -48,6 +56,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="show what would change without embedding or writing anything",
     )
 
+    ask_parser = commands.add_parser("ask", help="answer a question about Arash")
+    ask_parser.add_argument("question", help="the question, in quotes")
+    ask_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="also list every retrieved section with its similarity score",
+    )
+
     arguments = parser.parse_args(argv)
     try:
         if arguments.command == "check-config":
@@ -59,11 +75,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(
                 format_ingest_report(ingest_knowledge_base(arguments.data_dir, arguments.dry_run))
             )
-    except (ConfigurationError, KnowledgeBaseError, EmbeddingError) as error:
+        elif arguments.command == "ask":
+            ask(arguments.question, load_settings(), verbose=arguments.verbose)
+    except (ConfigurationError, KnowledgeBaseError, EmbeddingError, InvalidQuestionError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     except genai_errors.APIError as error:
-        print(f"error: embedding request failed ({error.code}): {error.message}", file=sys.stderr)
+        print(f"error: Gemini request failed ({error.code}): {error.message}", file=sys.stderr)
         return 1
     except psycopg.errors.UndefinedTable:
         print("error: table missing; run `uv run alembic upgrade head` first", file=sys.stderr)
@@ -89,6 +107,48 @@ def ingest_knowledge_base(knowledge_base_dir: Path, dry_run: bool) -> IngestRepo
     )
     with connect(settings.database_url.get_secret_value()) as connection:
         return run_ingest(chunks, PostgresChunkStore(connection), embedder, dry_run=dry_run)
+
+
+def ask(question: str, settings: Settings, *, verbose: bool) -> None:
+    """Answer `question`, printing the answer as it streams, then its sources."""
+    client = create_gemini_client(settings.google_ai_api_key.get_secret_value())
+    with connect(settings.database_url.get_secret_value()) as connection:
+        answer = answer_question(
+            question,
+            embedder=GeminiEmbedder(
+                client, settings.embedding_model, settings.embedding_batch_size
+            ),
+            searcher=PostgresChunkStore(connection),
+            generator=GeminiGenerator(client, settings.generation_model),
+            top_k=settings.retrieval_top_k,
+            min_similarity=settings.min_similarity,
+            contact_email=settings.contact_email,
+        )
+        answer_text = ""
+        for text_piece in answer.text_pieces:
+            print(text_piece, end="", flush=True)
+            answer_text += text_piece
+    print()
+
+    cited_numbers = extract_cited_source_numbers(answer_text, len(answer.sources))
+    if cited_numbers:
+        print("\nSources:")
+        for number in cited_numbers:
+            print(f"  [{number}] {_format_source(answer.sources[number - 1])}")
+    if verbose:
+        if answer.is_grounded:
+            print("\nRetrieved (cosine similarity):")
+            for number, source in enumerate(answer.sources, start=1):
+                print(f"  [{number}] {_format_source(source)}")
+        else:
+            print(
+                f"\nNo section reached the relevance threshold ({settings.min_similarity}); "
+                "the model was not called."
+            )
+
+
+def _format_source(source: RetrievedChunk) -> str:
+    return f"{source.similarity:.3f}  {source.chunk.chunk_id}"
 
 
 def format_chunk_report(chunks: Sequence[Chunk]) -> str:

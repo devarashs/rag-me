@@ -51,6 +51,33 @@ class Settings(BaseSettings):
         # Upper bound is a conservative guard: batches above 100 are untested.
         description="Chunks per embedding request.",
     )
+    generation_model: str = Field(
+        # Chosen for latency: first words in ~1s, versus ~6.6s for
+        # gemini-3.8-flash even at low thinking (measured 2026-10-07).
+        default="gemini-3.1-flash-lite",
+        min_length=1,
+        description="Gemini model that writes answers.",
+    )
+    retrieval_top_k: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="Sections retrieved and shown to the model per question.",
+    )
+    min_similarity: float = Field(
+        # Sits in the gap measured on 18 sample questions: off-topic topped out at
+        # 0.59, on-topic started at 0.65. Re-tune against the evaluation set.
+        default=0.62,
+        ge=0.0,
+        le=1.0,
+        description="Below this best-match similarity, answer 'I don't know' without "
+        "calling the model.",
+    )
+    contact_email: str = Field(
+        default="me@devarash.icu",
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+        description="Address offered when a question cannot be answered.",
+    )
 
     @field_validator("google_ai_api_key", "database_url")
     @classmethod

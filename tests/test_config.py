@@ -10,6 +10,10 @@ CONFIG_VARIABLES = [
     "DATABASE_URL",
     "EMBEDDING_MODEL",
     "EMBEDDING_BATCH_SIZE",
+    "GENERATION_MODEL",
+    "RETRIEVAL_TOP_K",
+    "MIN_SIMILARITY",
+    "CONTACT_EMAIL",
 ]
 
 
@@ -37,6 +41,10 @@ def test_reads_required_values_and_applies_defaults(valid_environment) -> None:
     assert settings.database_url.get_secret_value() == FAKE_DATABASE_URL
     assert settings.embedding_model == "gemini-embedding-2"
     assert settings.embedding_batch_size == 50
+    assert settings.generation_model == "gemini-3.1-flash-lite"
+    assert settings.retrieval_top_k == 5
+    assert settings.min_similarity == 0.62
+    assert settings.contact_email == "me@devarash.icu"
 
 
 def test_reads_env_file_and_ignores_unrelated_variables(tmp_path) -> None:
@@ -78,6 +86,44 @@ def test_postgres_scheme_alias_is_accepted(valid_environment) -> None:
     valid_environment.setenv("DATABASE_URL", "postgres://user:pw@host/db")
 
     assert load_settings(_env_file=None).database_url.get_secret_value().startswith("postgres://")
+
+
+@pytest.mark.parametrize(
+    ("variable", "value", "field", "expected"),
+    [
+        ("GENERATION_MODEL", "gemini-3.8-flash", "generation_model", "gemini-3.8-flash"),
+        ("RETRIEVAL_TOP_K", "20", "retrieval_top_k", 20),
+        ("MIN_SIMILARITY", "0", "min_similarity", 0.0),
+        ("CONTACT_EMAIL", "hello@example.test", "contact_email", "hello@example.test"),
+    ],
+)
+def test_answering_settings_can_be_overridden(
+    valid_environment, variable: str, value: str, field: str, expected
+) -> None:
+    valid_environment.setenv(variable, value)
+
+    assert getattr(load_settings(_env_file=None), field) == expected
+
+
+@pytest.mark.parametrize(
+    ("variable", "value"),
+    [
+        ("RETRIEVAL_TOP_K", "0"),
+        ("RETRIEVAL_TOP_K", "21"),
+        ("MIN_SIMILARITY", "-0.1"),
+        ("MIN_SIMILARITY", "1.5"),
+        ("CONTACT_EMAIL", "not-an-email"),
+        ("CONTACT_EMAIL", "two@@example.test"),
+        ("GENERATION_MODEL", ""),
+    ],
+)
+def test_invalid_answering_settings_are_rejected(
+    valid_environment, variable: str, value: str
+) -> None:
+    valid_environment.setenv(variable, value)
+
+    with pytest.raises(ConfigurationError, match=variable):
+        load_settings(_env_file=None)
 
 
 # --- rejection ------------------------------------------------------------------
