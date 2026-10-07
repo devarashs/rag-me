@@ -1,0 +1,397 @@
+/* Design tokens. Every colour, space, radius, shadow and duration below comes from
+   here; components never use raw values. Palette: warm neutrals, one terracotta
+   accent, never pure black or white. Body text and button labels meet WCAG AA
+   (4.5:1) in both themes; softness is spent on surfaces and borders. */
+:root {
+  --color-bg: #f7f4ef;
+  --color-surface: #fffdf9;
+  --color-surface-sunken: #efeae2;
+  --color-border: #e3ddd3;
+  --color-text: #2b2724;
+  --color-text-muted: #675f57;
+  --color-accent: #a5502a;
+  --color-accent-hover: #8e4422;
+  --color-on-accent: #fffaf5;
+  --color-danger: #9b2c2c;
+  --color-danger-surface: #fbeeec;
+  --color-focus: #a5502a;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  --shadow-soft: 0 6px 24px rgb(60 45 30 / 0.07);
+
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --leading: 1.6;
+
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --content-width: 680px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1f1c1a;
+    --color-surface: #2a2623;
+    --color-surface-sunken: #24211e;
+    --color-border: #3a3530;
+    --color-text: #ece6de;
+    --color-text-muted: #b3aa9f;
+    --color-accent: #e08a5f;
+    --color-accent-hover: #eaa07a;
+    --color-on-accent: #1f1c1a;
+    --color-danger: #f0a39a;
+    --color-danger-surface: #3a2522;
+    --color-focus: #e08a5f;
+    --shadow-soft: 0 6px 24px rgb(0 0 0 / 0.25);
+  }
+}
+
+/* --- base ------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading);
+}
+
+a {
+  color: var(--color-accent);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- layout ----------------------------------------------------------------- */
+
+.page {
+  max-width: var(--content-width);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.page-header h1 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xl);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.conversation-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.page-footer {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.page-footer p {
+  margin: 0;
+}
+
+/* --- suggestions (empty state) ------------------------------------------------ */
+
+.suggestions-heading {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestion {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.suggestion:hover {
+  background: var(--color-surface-sunken);
+}
+
+/* --- conversation ------------------------------------------------------------ */
+
+.conversation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exchange {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  animation: settle-in var(--duration-base) var(--ease-out);
+}
+
+.question-bubble {
+  align-self: flex-end;
+  max-width: 85%;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+  background: var(--color-surface-sunken);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.answer {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.answer-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.answer-text:empty {
+  display: none;
+}
+
+.answer.is-error {
+  background: var(--color-danger-surface);
+  box-shadow: none;
+  color: var(--color-danger);
+}
+
+/* The "!" marker means the error is not conveyed by colour alone. */
+.answer.is-error .answer-text::before {
+  content: "! ";
+  font-weight: 700;
+}
+
+/* --- thinking indicator (the only looping animation: a real loading state) --- */
+
+.thinking {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) 0;
+}
+
+.thinking[hidden] {
+  display: none;
+}
+
+.thinking span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+  opacity: 0.35;
+  animation: pulse 1s var(--ease-out) infinite;
+}
+
+.thinking span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.thinking span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+/* --- sources ----------------------------------------------------------------- */
+
+.sources {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.sources summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.source-list {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+}
+
+/* --- ask form ------------------------------------------------------------------ */
+
+.ask-form {
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-3) 0 var(--space-2);
+  background: var(--color-bg);
+}
+
+.ask-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.ask-row:focus-within {
+  border-color: var(--color-focus);
+}
+
+.ask-row textarea {
+  flex: 1;
+  min-height: 40px;
+  max-height: 160px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  resize: none;
+}
+
+/* The row shows focus via :focus-within, so the inner outline would double up. */
+.ask-row textarea:focus-visible {
+  outline: none;
+}
+
+.ask-button {
+  min-height: 40px;
+  padding: 0 var(--space-5);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.ask-button:hover {
+  background: var(--color-accent-hover);
+}
+
+.ask-button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.hint.is-error {
+  color: var(--color-danger);
+}
+
+.hint.is-error::before {
+  content: "! ";
+  font-weight: 700;
+}
+
+/* --- motion -------------------------------------------------------------------- */
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .thinking span {
+    opacity: 0.7;
+  }
+}

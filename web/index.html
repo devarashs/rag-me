@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ask about Arash</title>
+    <meta
+      name="description"
+      content="Ask questions about Arash Salehkhah's experience, projects and skills. Answers come from his own notes, with sources."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <h1>Ask about Arash</h1>
+        <p class="lede">
+          Questions about Arash Salehkhah's experience, projects and skills, answered only from his
+          own notes, with sources.
+        </p>
+      </header>
+
+      <main class="conversation-area">
+        <section id="suggestions" class="suggestions" aria-labelledby="suggestions-heading">
+          <h2 id="suggestions-heading" class="suggestions-heading">Try asking</h2>
+          <ul class="suggestion-list">
+            <li><button type="button" class="suggestion">What is Arash's main tech stack?</button></li>
+            <li><button type="button" class="suggestion">Has Arash worked with payments?</button></li>
+            <li><button type="button" class="suggestion">Has Arash built AI products?</button></li>
+            <li><button type="button" class="suggestion">Where is Arash based?</button></li>
+          </ul>
+        </section>
+
+        <!-- aria-busy is set on each answer while it streams, so screen readers
+             announce the finished answer once rather than every fragment. -->
+        <ol id="conversation" class="conversation" aria-live="polite"></ol>
+      </main>
+
+      <form id="ask-form" class="ask-form" novalidate>
+        <label for="question" class="visually-hidden">Your question</label>
+        <div class="ask-row">
+          <textarea
+            id="question"
+            name="question"
+            rows="1"
+            maxlength="500"
+            placeholder="Ask about his experience, projects or skills"
+            autocomplete="off"
+            aria-describedby="hint"
+            required
+          ></textarea>
+          <button id="ask-button" type="submit" class="ask-button">Ask</button>
+        </div>
+        <p id="hint" class="hint" aria-live="polite">Enter to send, Shift+Enter for a new line.</p>
+      </form>
+
+      <footer class="page-footer">
+        <p>
+          Prefer a person? Email <a href="mailto:me@devarash.icu">me@devarash.icu</a>. Built as a
+          retrieval-augmented generation demo:
+          <a href="https://github.com/devarashs/rag-me">source on GitHub</a>.
+        </p>
+      </footer>
+    </div>
+
+    <template id="exchange-template">
+      <li class="exchange">
+        <p class="question-bubble"></p>
+        <article class="answer" aria-busy="true">
+          <p class="answer-text"></p>
+          <p class="thinking" aria-hidden="true"><span></span><span></span><span></span></p>
+          <details class="sources" hidden>
+            <summary></summary>
+            <ol class="source-list"></ol>
+          </details>
+        </article>
+      </li>
+    </template>
+  </body>
+</html>
