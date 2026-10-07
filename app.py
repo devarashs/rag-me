@@ -4,8 +4,13 @@ Run locally with `uv run uvicorn app:app --reload`.
 """
 
 import logging
+import mimetypes
 
 from rag_me.api import create_production_app
+
+# Windows' MIME registry often lacks .webp, so local runs would serve the avatar
+# as application/octet-stream. (Vercel's CDN sets types itself.)
+mimetypes.add_type("image/webp", ".webp")
 
 # Vercel collects stdout/stderr as function logs; INFO carries the one-line
 # request records written by rag_me.api.
