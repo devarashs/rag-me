@@ -38,8 +38,11 @@ current item.
       Result: Server-Sent Events (sources, delta, done/error); Problem Details for
       422/429/503; 10 questions per visitor per 10 minutes, 200 per UTC day; IPs
       stored only as HMACs. Run locally: `uv run uvicorn app:app --reload`.
-- [ ] A single chat page  <-- next, plain HTML and JS, served by the same app
-- [ ] Deployed on Vercel from GitHub, secrets in Vercel environment settings
+- [x] A single chat page, plain HTML and JS, served by the same app
+      Result: `web/`, served via `app.frontend()`. Streams answers, shows cited
+      sources, handles loading, empty, error, cut-off and rate-limited states;
+      light and dark themes meet WCAG AA; checked at 375px and desktop.
+- [ ] Deployed on Vercel from GitHub, secrets in Vercel environment settings  <-- next
       Assumption: Vercel Hobby. Revisit if Python cold starts or limits bite.
 
 ## Phase 3: measure
