@@ -1,8 +1,10 @@
 # rag-me
 
-**Ask questions about Arash Salehkhah, answered from his own notes, with sources.**
+**Ask questions about my work, answered from my own notes, with sources.**
 
 **Live:** [ask.devarash.icu](https://ask.devarash.icu)
+
+![The rag-me chat page at ask.devarash.icu, with example questions](docs/screenshot.png)
 
 rag-me is a retrieval-augmented generation (RAG) bot for recruiters and hiring
 managers. It answers questions about my experience, projects and skills using
@@ -82,7 +84,7 @@ results and what is being improved next are in [ROADMAP.md](ROADMAP.md).
 
 | Concern | Choice | Why |
 |---|---|---|
-| Language | Python 3.12, [uv](https://docs.astral.sh/uv/) | The AI ecosystem's common language |
+| Language | Python 3.12, [uv](https://docs.astral.sh/uv/) | Best-supported SDKs for Gemini and pgvector |
 | Embeddings | `gemini-embedding-2`, 768 dimensions | Free tier; returns normalised vectors at reduced size |
 | Generation | `gemini-3.1-flash-lite` | About 1 second to first words; larger Flash models took 6 or more |
 | Vector store | Neon Postgres + pgvector | Real Postgres, free, scales to zero when idle and wakes on the next query |

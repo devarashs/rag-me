@@ -28,3 +28,7 @@ Thumbs.db
 private/
 evals/private-cases.toml
 evals/results/
+
+# Local tooling and original photos (never commit)
+.claude/
+images/
