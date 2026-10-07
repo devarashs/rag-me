@@ -18,6 +18,10 @@ from rag_me.database import sqlalchemy_url
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
+# Every table the migrations create. Each must resolve into the throwaway schema
+# before a test may touch it; see assert_table_resolves_to_schema.
+MIGRATED_TABLES = ("knowledge_chunks", "rate_limit_counters")
+
 
 def direct_database_url() -> str:
     """DATABASE_URL from the environment or .env, pointed at Neon's direct endpoint.
@@ -57,7 +61,8 @@ def migrated_schema_connection() -> Iterator[psycopg.Connection]:
     connection = psycopg.connect(database_url, autocommit=True)
     try:
         connection.execute(f'SET search_path TO "{schema}", public')
-        assert_table_resolves_to_schema(connection, "knowledge_chunks", schema)
+        for table_name in MIGRATED_TABLES:
+            assert_table_resolves_to_schema(connection, table_name, schema)
         register_vector(connection)
         yield connection
     finally:
