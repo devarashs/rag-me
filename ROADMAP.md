@@ -43,7 +43,8 @@ current item.
       sources, handles loading, empty, error, cut-off and rate-limited states;
       light and dark themes meet WCAG AA; checked at 375px and desktop.
 - [x] Deployed on Vercel from GitHub, secrets in Vercel environment settings
-      Result: https://rag-me.vercel.app (Hobby plan; pushes to main deploy).
+      Result: https://ask.devarash.icu (Hobby plan; pushes to main deploy;
+      rag-me.vercel.app is the Vercel default domain).
       Function runs in iad1 next to Neon us-east-1; page assets served from the
       CDN. Measured from a local machine via the fra1 edge: ~0.95s to the sources event, 0.7s for an
       off-topic refusal; first answer words depend on Gemini (0.9-8s observed).

@@ -2,7 +2,7 @@
 
 **Ask questions about Arash Salehkhah, answered from his own notes, with sources.**
 
-**Live:** [rag-me.vercel.app](https://rag-me.vercel.app)
+**Live:** [ask.devarash.icu](https://ask.devarash.icu)
 
 rag-me is a retrieval-augmented generation (RAG) bot for recruiters and hiring
 managers. It answers questions about my experience, projects and skills using
