@@ -101,8 +101,22 @@ def test_ask_streams_sources_then_deltas_then_done() -> None:
             "sources",
             {
                 "sources": [
-                    {"number": 1, "chunk_id": "a.md#go", "title": "Doc - go", "similarity": 0.9},
-                    {"number": 2, "chunk_id": "b.md#ts", "title": "Doc - ts", "similarity": 0.8},
+                    {
+                        "number": 1,
+                        "chunk_id": "a.md#go",
+                        "title": "Doc - go",
+                        "document_title": "Doc",
+                        "section_heading": "go",
+                        "similarity": 0.9,
+                    },
+                    {
+                        "number": 2,
+                        "chunk_id": "b.md#ts",
+                        "title": "Doc - ts",
+                        "document_title": "Doc",
+                        "section_heading": "ts",
+                        "similarity": 0.8,
+                    },
                 ]
             },
         ),

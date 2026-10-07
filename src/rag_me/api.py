@@ -5,7 +5,8 @@ Response formats:
 - `/api/ask` success is a Server-Sent Events stream (`text/event-stream`), so the
   first words reach the visitor while the rest is generated. Events, in order:
 
-      event: sources   data: {"sources": [{"number", "chunk_id", "title", "similarity"}]}
+      event: sources   data: {"sources": [{"number", "chunk_id", "title",
+                                 "document_title", "section_heading", "similarity"}]}
       event: delta     data: {"text": "..."}            (repeated)
       event: done      data: {"grounded": bool, "cited": [numbers]}
 
@@ -326,6 +327,8 @@ def describe_source(number: int, source: RetrievedChunk) -> dict[str, Any]:
         "number": number,
         "chunk_id": source.chunk.chunk_id,
         "title": source.chunk.title,
+        "document_title": source.chunk.document_title,
+        "section_heading": source.chunk.section_heading,
         "similarity": round(source.similarity, 4),
     }
 
