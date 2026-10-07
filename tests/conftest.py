@@ -51,14 +51,41 @@ def migrated_schema_connection() -> Iterator[psycopg.Connection]:
         setup_connection.execute(text(f'SET search_path TO "{schema}", public'))
         alembic_config = Config(str(PROJECT_ROOT / "alembic.ini"))
         alembic_config.attributes["connection"] = setup_connection
+        alembic_config.attributes["version_table_schema"] = schema
         command.upgrade(alembic_config, "head")
 
     connection = psycopg.connect(database_url, autocommit=True)
     try:
         connection.execute(f'SET search_path TO "{schema}", public')
+        assert_table_resolves_to_schema(connection, "knowledge_chunks", schema)
         register_vector(connection)
         yield connection
     finally:
         connection.execute(f'DROP SCHEMA "{schema}" CASCADE')
         connection.close()
         engine.dispose()
+
+
+def assert_table_resolves_to_schema(
+    connection: psycopg.Connection, table_name: str, schema: str
+) -> None:
+    """Stop the test unless the unqualified table name resolves into `schema`.
+
+    Tests delete rows. If the throwaway schema lacked the table, the name would
+    fall through the search_path to `public` and the test would delete real data,
+    which is exactly what happened once (2026-10-07) before the version-table fix.
+    """
+    row = connection.execute(
+        """
+        SELECT n.nspname
+        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.oid = to_regclass(%s)
+        """,
+        [table_name],
+    ).fetchone()
+    resolved_schema = row[0] if row else None
+    if resolved_schema != schema:
+        pytest.fail(
+            f"Refusing to run: {table_name} resolves to schema {resolved_schema!r}, "
+            f"not the throwaway schema {schema!r}"
+        )

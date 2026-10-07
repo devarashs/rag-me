@@ -18,8 +18,8 @@ from rag_me.config import load_settings
 from rag_me.database import sqlalchemy_url
 
 
-def run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection)
+def run_migrations(connection: Connection, version_table_schema: str | None = None) -> None:
+    context.configure(connection=connection, version_table_schema=version_table_schema)
     with context.begin_transaction():
         context.run_migrations()
 
@@ -27,7 +27,13 @@ def run_migrations(connection: Connection) -> None:
 def run_migrations_online() -> None:
     provided_connection = context.config.attributes.get("connection")
     if provided_connection is not None:
-        run_migrations(provided_connection)
+        # A caller migrating a non-default schema must pin the version table to
+        # it. Otherwise Alembic finds `public.alembic_version` through the
+        # search_path, decides the schema is already at head, and creates nothing.
+        run_migrations(
+            provided_connection,
+            version_table_schema=context.config.attributes.get("version_table_schema"),
+        )
         return
 
     database_url = load_settings().database_url.get_secret_value()
