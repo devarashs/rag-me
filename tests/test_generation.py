@@ -30,6 +30,7 @@ def test_sends_model_prompt_and_system_instruction() -> None:
     assert call["model"] == "gemini-test"
     assert call["contents"] == "the prompt"
     assert call["config"].system_instruction == "the rules"
+    assert call["config"].automatic_function_calling.disable is True
 
 
 def test_nothing_is_requested_until_the_stream_is_consumed() -> None:

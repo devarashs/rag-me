@@ -41,7 +41,12 @@ class GeminiGenerator:
         response_stream = self._client.models.generate_content_stream(
             model=self.model_name,
             contents=prompt,
-            config=types.GenerateContentConfig(system_instruction=system_instruction),
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                # No tools are passed, so the SDK's automatic function calling
+                # would do nothing except log a warning on every request.
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+            ),
         )
         for response_piece in response_stream:
             # Pieces that carry only metadata (usage, finish reason) have no text.
