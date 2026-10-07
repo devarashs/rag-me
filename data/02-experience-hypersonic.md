@@ -2,7 +2,7 @@
 
 ## Role overview (Hypersonic Laboratories)
 
-From June 2025 to September 2026, Arash was Lead Backend Engineer at Hypersonic Laboratories, a remote company building Helix, a creator-driven gaming platform with real-money transactions, user-made packages and worlds, and a desktop launcher. Arash led the backend: API design, the economy service behind every transaction, the creator platform, the data model, the reliability tooling that kept the platform up, and the AI features the studio shipped. The main stack was NestJS and TypeScript, PostgreSQL with TypeORM, Redis, OAuth 2.0 and OpenID Connect for authentication, AWS, Cloudflare and Railway, with React/Next.js and Electron on the client side.
+From June 2025 to September 2026, Arash was Lead Backend Engineer at Hypersonic Laboratories, working remotely as a contractor for the UK-based company. Hypersonic was building Helix, a creator-driven gaming platform with real-money transactions, user-made packages and worlds, and a desktop launcher. Arash led the backend: API design, the economy service behind every transaction, the creator platform, the data model, the reliability tooling that kept the platform up, and the AI features the studio shipped. The main stack was NestJS and TypeScript, PostgreSQL with TypeORM, Redis, OAuth 2.0 and OpenID Connect for authentication, AWS, Cloudflare and Railway, with React/Next.js and Electron on the client side.
 
 ## Team and leadership (Hypersonic Laboratories)
 

@@ -7,11 +7,18 @@ Commands:
     ingest        Embed new and changed chunks and store them in Postgres;
                   remove chunks whose sections were deleted.
     ask           Answer a question from the stored chunks, citing sources.
+    eval          Run evals/cases.toml through the pipeline, grade the answers,
+                  print a report and save the full results as JSON.
 """
 
 import argparse
+import json
+import subprocess
 import sys
+import time
 from collections.abc import Sequence
+from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 
 import psycopg
@@ -22,11 +29,28 @@ from rag_me.chunking import Chunk, KnowledgeBaseError, load_knowledge_base_chunk
 from rag_me.config import ConfigurationError, Settings, load_settings
 from rag_me.database import connect
 from rag_me.embeddings import EmbeddingError, GeminiEmbedder, create_gemini_client
+from rag_me.evaluation import (
+    CaseResult,
+    EvalCase,
+    EvalCaseError,
+    EvalOptions,
+    format_report,
+    load_eval_cases,
+    result_record,
+    run_case,
+    summarize,
+)
 from rag_me.generation import GeminiGenerator
 from rag_me.ingest import IngestReport, run_ingest
+from rag_me.judging import GeminiJudge
 from rag_me.store import PostgresChunkStore, RetrievedChunk
 
 DEFAULT_KNOWLEDGE_BASE_DIR = Path("data")
+DEFAULT_EVAL_CASES = Path("evals/cases.toml")
+DEFAULT_EVAL_RESULTS_DIR = Path("evals/results")
+# Stronger than the default answering model, so it can catch that model's mistakes.
+DEFAULT_JUDGE_MODEL = "gemini-3.8-flash"
+EVAL_RETRY_DELAY_SECONDS = 30
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -64,6 +88,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="also list every retrieved section with its similarity score",
     )
 
+    eval_parser = commands.add_parser("eval", help="grade the bot against evals/cases.toml")
+    _add_data_dir_argument(eval_parser)
+    eval_parser.add_argument("--cases", type=Path, default=DEFAULT_EVAL_CASES)
+    eval_parser.add_argument("--output-dir", type=Path, default=DEFAULT_EVAL_RESULTS_DIR)
+    eval_parser.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL)
+    eval_parser.add_argument(
+        "--only", default="", help="comma-separated case ids to run (default: all)"
+    )
+
     arguments = parser.parse_args(argv)
     try:
         if arguments.command == "check-config":
@@ -77,7 +110,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         elif arguments.command == "ask":
             ask(arguments.question, load_settings(), verbose=arguments.verbose)
-    except (ConfigurationError, KnowledgeBaseError, EmbeddingError, InvalidQuestionError) as error:
+        elif arguments.command == "eval":
+            run_evaluation(arguments, load_settings())
+    except (
+        ConfigurationError,
+        KnowledgeBaseError,
+        EmbeddingError,
+        InvalidQuestionError,
+        EvalCaseError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     except genai_errors.APIError as error:
@@ -145,6 +186,99 @@ def ask(question: str, settings: Settings, *, verbose: bool) -> None:
                 f"\nNo section reached the relevance threshold ({settings.min_similarity}); "
                 "the model was not called."
             )
+
+
+def run_evaluation(arguments: argparse.Namespace, settings: Settings) -> None:
+    """Run the eval cases, print progress and the report, and save results as JSON."""
+    known_chunk_ids = [chunk.chunk_id for chunk in load_knowledge_base_chunks(arguments.data_dir)]
+    cases = load_eval_cases(arguments.cases, known_chunk_ids)
+    only_ids = {case_id.strip() for case_id in arguments.only.split(",") if case_id.strip()}
+    if only_ids:
+        unknown = only_ids - {case.id for case in cases}
+        if unknown:
+            raise EvalCaseError(f"--only names unknown cases: {sorted(unknown)}")
+        cases = [case for case in cases if case.id in only_ids]
+
+    options = EvalOptions(
+        top_k=settings.retrieval_top_k,
+        min_similarity=settings.min_similarity,
+        contact_email=settings.contact_email,
+    )
+    client = create_gemini_client(settings.google_ai_api_key.get_secret_value())
+    embedder = GeminiEmbedder(client, settings.embedding_model, settings.embedding_batch_size)
+    generator = GeminiGenerator(client, settings.generation_model)
+    judge = GeminiJudge(client, arguments.judge_model)
+
+    with connect(settings.database_url.get_secret_value()) as connection:
+        searcher = PostgresChunkStore(connection)
+
+        def run(case: EvalCase) -> CaseResult:
+            return run_case(
+                case,
+                embedder=embedder,
+                searcher=searcher,
+                generator=generator,
+                judge=judge,
+                options=options,
+            )
+
+        results = []
+        for index, case in enumerate(cases, start=1):
+            print(f"[{index}/{len(cases)}] {case.id}", file=sys.stderr, flush=True)
+            results.append(run(case))
+
+        # Free-tier models return 503 "high demand" in bursts that outlast the
+        # SDK's own retries. One more attempt after a pause recovers most of them
+        # without re-spending quota on the cases that already succeeded.
+        failed_indexes = [index for index, result in enumerate(results) if result.error]
+        if failed_indexes:
+            print(
+                f"Retrying {len(failed_indexes)} failed case(s) in {EVAL_RETRY_DELAY_SECONDS}s",
+                file=sys.stderr,
+                flush=True,
+            )
+            time.sleep(EVAL_RETRY_DELAY_SECONDS)
+            for index in failed_indexes:
+                print(f"[retry] {results[index].case.id}", file=sys.stderr, flush=True)
+                results[index] = run(results[index].case)
+
+    summary = summarize(results, options.top_k)
+    print(format_report(summary, results))
+
+    started = datetime.now(UTC)
+    arguments.output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = arguments.output_dir / f"{started:%Y%m%dT%H%M%SZ}.json"
+    output_path.write_text(
+        json.dumps(
+            {
+                "run_at": started.isoformat(),
+                "git_commit": _current_git_commit(),
+                "models": {
+                    "embedding": settings.embedding_model,
+                    "generation": settings.generation_model,
+                    "judge": arguments.judge_model,
+                },
+                "options": asdict(options),
+                "summary": summary,
+                "cases": [result_record(result) for result in results],
+            },
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    print(f"\nSaved {output_path}")
+
+
+def _current_git_commit() -> str | None:
+    """The checked-out commit, so a saved run can be tied to the code it measured."""
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return completed.stdout.strip() or None
 
 
 def _format_source(source: RetrievedChunk) -> str:

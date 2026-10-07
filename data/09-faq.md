@@ -74,11 +74,15 @@ Yes, daily, with Claude Code and his own skill files. Arash reviews by hand anyt
 
 ## Where is Arash based?
 
-Arash is based in Yerevan, Armenia (UTC+4). He works remotely as a contractor or through an employer of record, and is open to relocation worldwide, with the UAE and EU among his preferred destinations.
+Arash is based in Yerevan, Armenia (UTC+4). He can work remotely as a contractor, or through an employer of record, for a company based anywhere, as he did for UK-based Hypersonic Laboratories. He is also open to relocation worldwide, with the UAE and EU among his preferred destinations.
 
 ## Is Arash open to relocation?
 
-Yes. Arash is open to relocating worldwide, with the UAE and EU countries among his preferred destinations. He would need visa sponsorship for the US, UK, EU or Canada.
+Yes. Arash is open to relocating worldwide, with the UAE and EU countries among his preferred destinations. Relocating to the US, UK, EU or Canada would require visa sponsorship. Working remotely does not: Arash can work as a contractor for a company located anywhere, as he did in his most recent role with UK-based Hypersonic Laboratories.
+
+## Does Arash need visa sponsorship?
+
+Only to relocate. Arash can work remotely as a contractor, or through an employer of record, for a company located anywhere, with no sponsorship needed; his most recent role, at UK-based Hypersonic Laboratories, was a contractor arrangement. To relocate to the US, UK, EU or Canada, he would need visa sponsorship.
 
 ## How can I contact Arash?
 
