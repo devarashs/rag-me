@@ -21,16 +21,20 @@ current item.
       re-embed changed sections and remove deleted ones
       Result: 86 chunks embedded (gemini-embedding-2, 768 dims) in ~9s; a re-run
       embeds nothing; schema via `uv run alembic upgrade head`.
-- [ ] `ask` answers from the top matching chunks with cited sources, and says it
-      does not know (pointing to Arash's email) when nothing relevant is retrieved  <-- next
-      Note: relevant and irrelevant similarity scores sit close together (0.70 vs
-      0.66 on a location question), so a fixed "I don't know" threshold needs tuning
-      against real questions rather than a guessed constant.
+- [x] `ask` answers from the top matching chunks with cited sources, and says it
+      does not know (pointing to Arash's email) when nothing relevant is retrieved
+      Result: `uv run rag-me ask "..." --verbose`. Generation on
+      gemini-3.1-flash-lite (~1s to first words; gemini-3.8-flash took ~6.6s).
+      Relevance gate at 0.62 cosine similarity, set from 18 sample questions:
+      off-topic peaked at 0.59, on-topic started at 0.65. Personal-detail
+      questions such as salary pass the gate (0.77) and are declined by the model's instructions instead.
+      Known weakness: vague questions ("what does he do") retrieve poorly; see
+      query rewriting in Phase 4.
 
 ## Phase 2: online
 
 - [ ] `POST /api/ask` validates input, streams the answer, and enforces a
-      per-visitor rate limit plus a global daily cap stored in Postgres
+      per-visitor rate limit plus a global daily cap stored in Postgres  <-- next
 - [ ] A single chat page, plain HTML and JS, served by the same app
 - [ ] Deployed on Vercel from GitHub, secrets in Vercel environment settings
       Assumption: Vercel Hobby. Revisit if Python cold starts or limits bite.
