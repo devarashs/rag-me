@@ -43,6 +43,7 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **AWS:** part of the Hypersonic platform stack; S3 storage in Cubby Server and the e-Vision server. DynamoDB for Helix game inventory at Hypersonic; EC2 and Lightsail servers and CloudFront in the multi-provider fleet of the independent network infrastructure work; light use of IAM at Hypersonic.
 - **Cloudflare:** part of the Hypersonic platform stack, including Sandbox for Dreamer; R2 support in Cubby Server. Services used: Workers, Pages, Sandbox, R2, D1, KV, CDN.
 - **Railway:** Hypersonic deployment.
+- **Microsoft Azure:** obtaining the code-signing certificate for Hypersonic's Electron launcher.
 - **OVH Public Cloud:** automated game-server provisioning through the OVH APIs at Hypersonic.
 - **OVH, Hetzner, DigitalOcean:** alongside AWS EC2 and Lightsail, the providers behind the 20+ server fleet in the independent network infrastructure work.
 - **Docker, Linux, Nginx, Caddy, Bash:** service packaging and server operations, including a self-managed fleet of 20+ servers.
@@ -62,13 +63,16 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 
 ## Arash's AI engineering experience
 
-- **LLM integration and model routing:** OpenRouter in Dreamer; Alibaba Cloud Qwen for real-time voice in Hypersonic's multi-agent harness.
+- **LLM integration and model routing:** OpenRouter in Dreamer; Alibaba Cloud Qwen realtime for voice in Hypersonic's multi-agent harness; Gemini in rag-me.
 - **Multi-agent systems:** worked on Hypersonic's unreleased internal harness for multiple AI agents that each have their own skills.
 - **MCP servers and tool design:** Dreamer's per-user MCP server.
 - **Sandboxed agent execution:** Cloudflare Sandbox per user in Dreamer.
 - **Image and 3D generation APIs:** Meshy in Dreamer.
 - **Usage-based AI billing:** Dreamer.
-- **Real-time voice pipelines:** real-time voice chat in Hypersonic's multi-agent harness, built on Alibaba Cloud Qwen, including audio buffering and streaming.
+- **Real-time voice AI:** real-time voice chat in Hypersonic's multi-agent harness on Alibaba Cloud's Qwen realtime model, with voice activity detection (VAD), turn management and barge-in, noise suppression, and audio buffering and streaming built by Arash.
+- **Speech-to-text and text-to-speech:** voice messages to the text agents through an STT model, and read-aloud replies through a TTS model, at Hypersonic.
+- **Agent memory and context management:** conversation history, session summarisation and provider-side prompt caching for the text and voice agents at Hypersonic.
+- **RAG and LLM evaluation:** rag-me, a framework-free RAG system on pgvector with a 34-case evaluation suite (retrieval hit@k and MRR, relevance-gate checks, LLM-as-judge answer grading).
 - **AI-assisted development:** Claude Code daily with custom skill files.
 
 ## Arash's machine learning experience

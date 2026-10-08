@@ -12,7 +12,11 @@ Dreamer is an AI world-building product Arash built end to end at Hypersonic Lab
 
 ## Multi-agent harness and real-time voice (Hypersonic)
 
-At Hypersonic Laboratories, Arash also worked on an unreleased internal harness for running multiple AI agents together, each with its own skills. His biggest contribution to the harness was real-time voice chat on Alibaba Cloud's Qwen models. Arash built the system around the model, including the buffering and streaming needed to keep a live voice conversation responsive.
+At Hypersonic Laboratories, Arash also worked on an unreleased internal harness for running multiple AI agents together, each with its own skills. His biggest contribution to the harness was real-time voice chat on Alibaba Cloud's Qwen realtime model, a speech-to-speech model. Arash built the whole voice layer around the model: voice activity detection (VAD), turn management and barge-in, noise suppression, and the audio buffering and streaming needed to keep a live voice conversation responsive. For the text agents he built a separate voice service: voice messages transcribed by a speech-to-text (STT) model, and a read-aloud button that speaks replies through a text-to-speech (TTS) model.
+
+## Agent memory, context and prompt caching (Hypersonic)
+
+Arash built memory and context management for the agents in Hypersonic's multi-agent harness, both text and voice: conversation history, summarisation of long sessions to stay within the context window, and provider-side prompt caching to cut latency and cost. These are the practical problems of running agents in production rather than in a demo: what the agent remembers, what it forgets, and what each turn costs.
 
 ## How Arash designs agent tools and guardrails
 
@@ -39,4 +43,8 @@ Beyond integrating LLMs into products, Arash has trained models himself. In his 
 
 ## About this rag-me project
 
-rag-me is a retrieval system Arash built to answer questions about his own experience, as a working example of retrieval-augmented generation (RAG).
+rag-me (Ask Arash, live at https://ask.devarash.icu) is a retrieval-augmented generation (RAG) system Arash built to answer questions about his own experience, with cited sources. He built it without a RAG framework such as LangChain or LlamaIndex, so that every stage is written, tested and understood by hand.
+
+The stack: Python 3.12 with FastAPI on Vercel; Gemini for embeddings (gemini-embedding-2, 768 dimensions) and generation (gemini-3.1-flash-lite); Neon Postgres with pgvector. The knowledge base is split into one chunk per Markdown section, and re-ingesting only re-embeds sections that changed. A relevance gate refuses questions whose best match is below 0.62 cosine similarity without calling the language model; Arash set that threshold from measurements, where off-topic questions scored at most 0.59 and real questions at least 0.65. Answers stream over Server-Sent Events with [n] citations. Visitors are rate limited in Postgres, and their IPs are stored only as HMACs.
+
+rag-me has an evaluation suite of 34 questions, including questions it must decline and prompt-injection attempts, scored separately on retrieval, the relevance gate and answer quality (graded by a stronger model). The first retrieval baseline is hit@1 0.84, hit@5 0.92 and mean reciprocal rank 0.88. The evaluation also showed that injection attempts score high enough to pass the relevance gate, so the defence against them is the prompt structure: the visitor's question is escaped into its own block and treated as untrusted. The code is public at https://github.com/devarashs/rag-me.

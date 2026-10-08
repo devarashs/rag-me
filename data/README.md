@@ -44,9 +44,8 @@ work reports of his public GitHub repositories.
 
 Fill each one into the named file, then delete it from this list.
 
-- **07-ai-engineering.md, rag-me section:** the stack (embedding model, vector store,
-  chunking strategy, LLM) and any evaluation run, such as test questions with expected
-  answers.
+- **07-ai-engineering.md, rag-me section:** add answer-quality numbers once the LLM judge
+  baseline has run, and Langfuse tracing once it is live.
 - **New file, optional:** testimonials. One or two sentences each from former colleagues or
   clients who agree to be quoted publicly, with their name and role.
 

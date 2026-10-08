@@ -18,7 +18,15 @@ Yes. Arash built Dreamer at Hypersonic Laboratories, an AI world-building produc
 
 ## Has Arash worked with real-time voice AI?
 
-Yes. At Hypersonic Laboratories Arash built real-time voice chat for the studio's unreleased internal multi-agent harness, using Alibaba Cloud's Qwen models. He built the buffering and streaming around the model that keep a live voice conversation responsive.
+Yes. At Hypersonic Laboratories Arash built real-time voice chat for the studio's unreleased internal multi-agent harness on Alibaba Cloud's Qwen realtime model. The model was only called through the API; Arash built everything around it, including voice activity detection (VAD), turn management and barge-in, noise suppression, and audio buffering and streaming. He also added voice messages (speech-to-text) and read-aloud replies (text-to-speech) to the harness's text agents.
+
+## Has Arash built agent memory or context management?
+
+Yes. At Hypersonic Laboratories Arash built memory and context management for the AI agents in the studio's multi-agent harness, both text and voice: conversation history, summarisation of long sessions, and provider-side prompt caching to reduce latency and cost.
+
+## Has Arash used Microsoft Azure?
+
+Only lightly. At Hypersonic Laboratories Arash used Azure to obtain the code-signing certificate for the studio's Electron launcher. His main cloud experience is AWS and Cloudflare.
 
 ## Has Arash built MCP servers?
 
