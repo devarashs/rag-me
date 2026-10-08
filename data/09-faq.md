@@ -26,7 +26,7 @@ Yes. At Hypersonic Laboratories Arash built memory and context management for th
 
 ## Has Arash used Microsoft Azure?
 
-Only lightly. At Hypersonic Laboratories Arash used Azure to obtain the code-signing certificate for the studio's Electron launcher. His main cloud experience is AWS and Cloudflare.
+Lightly. At Hypersonic Laboratories Arash used Azure to obtain the code-signing certificate for the studio's Electron launcher, and a few of the Helix game servers ran on Azure, though most were provisioned through OVH Public Cloud. His main cloud experience is AWS, Cloudflare and OVH.
 
 ## Has Arash built MCP servers?
 

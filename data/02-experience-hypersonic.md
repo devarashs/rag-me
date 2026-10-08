@@ -42,7 +42,7 @@ At Hypersonic Laboratories, Arash built the studio's desktop launcher in Electro
 
 ## Creator Hub and game-server provisioning (Hypersonic)
 
-At Hypersonic Laboratories, Arash built Creator Hub, a Next.js web app for creators, and its backend. Arash built the automated provisioning system behind Creator Hub's game servers: it created servers through the APIs of an OVH Public Cloud project, and each server was billed through the economy service. Creator Hub also let creators view logs, restart servers and install packages from the browser. He designed a bitmask-based server permission system with owner-defined groups, and added reviews for packages and worlds.
+At Hypersonic Laboratories, Arash built Creator Hub, a Next.js web app for creators, and its backend. Arash built the automated provisioning system behind Creator Hub's game servers: it created servers through the APIs of an OVH Public Cloud project, and each server was billed through the economy service. OVH hosted most of the game servers; a few also ran on Microsoft Azure. Creator Hub also let creators view logs, restart servers and install packages from the browser. He designed a bitmask-based server permission system with owner-defined groups, and added reviews for packages and worlds.
 
 ## Reliability layer (Hypersonic)
 

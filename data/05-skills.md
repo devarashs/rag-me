@@ -43,7 +43,7 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **AWS:** part of the Hypersonic platform stack; S3 storage in Cubby Server and the e-Vision server. DynamoDB for Helix game inventory at Hypersonic; EC2 and Lightsail servers and CloudFront in the multi-provider fleet of the independent network infrastructure work; light use of IAM at Hypersonic.
 - **Cloudflare:** part of the Hypersonic platform stack, including Sandbox for Dreamer; R2 support in Cubby Server. Services used: Workers, Pages, Sandbox, R2, D1, KV, CDN.
 - **Railway:** Hypersonic deployment.
-- **Microsoft Azure:** obtaining the code-signing certificate for Hypersonic's Electron launcher.
+- **Microsoft Azure:** obtaining the code-signing certificate for Hypersonic's Electron launcher, and hosting a few of Helix's game servers (most ran on OVH Public Cloud).
 - **OVH Public Cloud:** automated game-server provisioning through the OVH APIs at Hypersonic.
 - **OVH, Hetzner, DigitalOcean:** alongside AWS EC2 and Lightsail, the providers behind the 20+ server fleet in the independent network infrastructure work.
 - **Docker, Linux, Nginx, Caddy, Bash:** service packaging and server operations, including a self-managed fleet of 20+ servers.
@@ -102,7 +102,7 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 
 ## Gaps Arash is honest about
 
-- No production Azure, Kubernetes at scale, or Terraform-heavy platform work.
+- Only light Azure use (code signing and a few hosted game servers); no deeper Azure platform work such as landing zones, Entra ID or Front Door. No Kubernetes at scale or Terraform-heavy platform work.
 - No dedicated security engineering (penetration testing, red teaming).
 - Python is a working skill, not Arash's primary language.
 - GraphQL only in small personal projects, never in production. Arash is confident he could pick it up for a production API, since it sits on the same backend fundamentals he uses daily.
