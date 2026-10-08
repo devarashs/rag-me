@@ -26,6 +26,8 @@ Arash is available to start immediately.
 - Builds testing in early: his first project at Hypersonic was an automated test pipeline with dev, staging and production environments.
 - Works in Agile/Scrum: at Hypersonic Laboratories he planned work in sprints, set milestones and estimates, and reported progress to leadership.
 - Reviews code and gives constructive feedback: at Hypersonic he reviewed the frontend engineers' code as well as owning the backend.
+- Mentors through regular 1:1s and feedback: at Hypersonic he held 1:1s with the two frontend engineers he guided.
+- Builds delivery processes from scratch: at Hypersonic, where there was no testing or release process, he set up the CI/CD pipeline with dev, staging and production gates, sprint planning and milestones.
 
 ## Languages Arash speaks
 

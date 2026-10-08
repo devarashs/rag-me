@@ -6,7 +6,7 @@ From June 2025 to September 2026, Arash was Lead Backend Engineer at Hypersonic 
 
 ## Team and leadership (Hypersonic Laboratories)
 
-At Hypersonic Laboratories, Arash started as one of two backend engineers and later became the only backend engineer, owning the entire backend himself. He also guided the two frontend engineers, helping them with their work, distributing frontend tasks between them and reviewing their code. Arash worked in sprints at Hypersonic: he took part in sprint planning, broke projects into milestones with estimates, and reported progress to the studio's leadership. Hypersonic started with more than 25 engineers, but after several rounds of layoffs only three remained, Arash among them. Arash was let go in the final round of layoffs, in September 2026.
+At Hypersonic Laboratories, Arash started as one of two backend engineers and later became the only backend engineer, owning the entire backend himself. He also guided the two frontend engineers, helping them with their work, distributing frontend tasks between them and reviewing their code. He held regular 1:1s with them and gave them ongoing feedback on their work and development. Arash worked in sprints at Hypersonic: he took part in sprint planning, broke projects into milestones with estimates, and reported progress to the studio's leadership. Hypersonic started with more than 25 engineers, but after several rounds of layoffs only three remained, Arash among them. Arash was let go in the final round of layoffs, in September 2026.
 
 ## Testing pipeline and environments (Hypersonic Laboratories)
 
