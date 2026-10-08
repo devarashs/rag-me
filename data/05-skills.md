@@ -20,6 +20,8 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **Permission systems:** bitmask permissions with owner-defined groups in Hypersonic's Creator Hub.
 - **Package and dependency resolution:** Hypersonic package registry.
 - **Content-defined chunking (FastCDC) and delta patching:** Hypersonic game launcher.
+- **Serverless and Firebase:** serverless functions on Cloudflare Workers (the Hypersonic stack) and Vercel (rag-me's API runs as a Vercel Python function); Arash has also worked with Firebase.
+- **Third-party integrations:** besides Stripe and the AI providers, Arash has integrated Twilio for SMS, transactional email APIs, search engines, CRM sync and maps APIs.
 
 ## Arash's databases and storage experience
 
@@ -30,6 +32,7 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **ORMs and ODMs:** TypeORM (used heavily across the Hypersonic backend), Prisma (Cubby Server), Mongoose (e-Vision server).
 - **Query optimisation and indexing:** Hypersonic registry queries, N+1 elimination with batch and eager loading.
 - **Content-addressed storage:** Hypersonic launcher uploads.
+- **ETL and analytics:** Arash has built ETL jobs and reporting and analytics queries. market-lens is an example: it extracts live data from 9 exchanges, transforms each format into one consistent model, and analyses it.
 
 ## Arash's payments experience
 
@@ -87,6 +90,8 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **React, Next.js:** Creator Hub, market-lens UI, Nodeeweb, the e-Vision admin panel and page builder, freelance work.
 - **React Native:** Cubby Drive Client (bare workflow, Zustand, a custom Kotlin native module); the Melk Pro real-estate app, built as a freelancer and published on Android app stores.
 - **Tailwind CSS, shadcn/ui, Radix UI:** the e-Vision page builder.
+- **react-admin:** Arash has used the react-admin framework for building admin panels.
+- **Charts, PDF rendering and internationalisation (i18n):** Arash has built charting, PDF generation and multi-language interfaces in front-end work.
 - **Electron:** Hypersonic game launcher.
 - **three.js:** Dreamer world rendering.
 

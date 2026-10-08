@@ -24,6 +24,8 @@ Arash is available to start immediately.
 - Comfortable working async in remote teams across time zones; every role he has held has been remote.
 - Has led backend work as Lead Backend Engineer at Hypersonic Laboratories, where he was the sole backend engineer and guided two frontend engineers, distributing their tasks.
 - Builds testing in early: his first project at Hypersonic was an automated test pipeline with dev, staging and production environments.
+- Works in Agile/Scrum: at Hypersonic Laboratories he planned work in sprints, set milestones and estimates, and reported progress to leadership.
+- Reviews code and gives constructive feedback: at Hypersonic he reviewed the frontend engineers' code as well as owning the backend.
 
 ## Languages Arash speaks
 

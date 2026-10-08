@@ -64,6 +64,10 @@ Yes, in a hands-on lead role. As Lead Backend Engineer at Hypersonic Laboratorie
 
 Arash was laid off. Hypersonic Laboratories went through several rounds of layoffs that took the engineering team from more than 25 engineers down to three. Arash was one of the last three, and was let go in the final round in September 2026.
 
+## Does Arash work in Agile or Scrum teams?
+
+Yes. At Hypersonic Laboratories Arash worked in sprints: sprint planning, breaking projects into milestones with estimates, and reporting progress to the studio's leadership. He also reviewed the code of the two frontend engineers he guided.
+
 ## Does Arash write tests?
 
 Yes. When Arash joined Hypersonic Laboratories there was no testing pipeline and other teams faced daily backend regressions. He built an automated test pipeline that ran before every deploy, split the platform into dev, staging and production environments, and added more than 2,500 tests from unit to end-to-end across Hypersonic's projects, which ended the daily regressions. With more than 70% of the backend covered, uptime reached 100% in most weeks according to Better Stack, up from weeks as low as 88% before.
