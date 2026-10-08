@@ -34,10 +34,11 @@ from rag_me.evaluation import (
     EvalCase,
     EvalCaseError,
     EvalOptions,
+    answer_case,
     format_report,
+    grade_results,
     load_eval_cases,
     result_record,
-    run_case,
     summarize,
 )
 from rag_me.generation import GeminiGenerator
@@ -53,6 +54,9 @@ DEFAULT_EVAL_RESULTS_DIR = Path("evals/results")
 # Stronger than the default answering model, so it can catch that model's mistakes.
 DEFAULT_JUDGE_MODEL = "gemini-3.8-flash"
 EVAL_RETRY_DELAY_SECONDS = 30
+# Answers per judge request. The judge's free tier allows about 20 requests a
+# day, so one-per-request cannot finish a ~30-answer run; 8 needs about 4.
+DEFAULT_JUDGE_BATCH_SIZE = 8
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -101,6 +105,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     eval_parser.add_argument("--output-dir", type=Path, default=DEFAULT_EVAL_RESULTS_DIR)
     eval_parser.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL)
+    eval_parser.add_argument(
+        "--judge-batch-size",
+        type=_positive_int,
+        default=DEFAULT_JUDGE_BATCH_SIZE,
+        help=f"answers graded per judge request (default: {DEFAULT_JUDGE_BATCH_SIZE})",
+    )
     eval_parser.add_argument(
         "--only", default="", help="comma-separated case ids to run (default: all)"
     )
@@ -227,35 +237,31 @@ def run_evaluation(arguments: argparse.Namespace, settings: Settings) -> None:
     with connect(settings.database_url.get_secret_value()) as connection:
         searcher = PostgresChunkStore(connection)
 
-        def run(case: EvalCase) -> CaseResult:
-            return run_case(
-                case,
-                embedder=embedder,
-                searcher=searcher,
-                generator=generator,
-                judge=judge,
-                options=options,
+        def answer(case: EvalCase) -> CaseResult:
+            return answer_case(
+                case, embedder=embedder, searcher=searcher, generator=generator, options=options
             )
 
         results = []
         for index, case in enumerate(cases, start=1):
             print(f"[{index}/{len(cases)}] {case.id}", file=sys.stderr, flush=True)
-            results.append(run(case))
+            results.append(answer(case))
 
         # Free-tier models return 503 "high demand" in bursts that outlast the
         # SDK's own retries. One more attempt after a pause recovers most of them
         # without re-spending quota on the cases that already succeeded.
         failed_indexes = [index for index, result in enumerate(results) if result.error]
         if failed_indexes:
-            print(
-                f"Retrying {len(failed_indexes)} failed case(s) in {EVAL_RETRY_DELAY_SECONDS}s",
-                file=sys.stderr,
-                flush=True,
-            )
-            time.sleep(EVAL_RETRY_DELAY_SECONDS)
+            _pause_before_retry(f"{len(failed_indexes)} unanswered case(s)")
             for index in failed_indexes:
-                print(f"[retry] {results[index].case.id}", file=sys.stderr, flush=True)
-                results[index] = run(results[index].case)
+                results[index] = answer(results[index].case)
+
+    requests = grade_results(results, judge, arguments.judge_batch_size)
+    print(f"Graded in {requests} judge request(s)", file=sys.stderr, flush=True)
+    if any(result.grading_error for result in results):
+        _pause_before_retry("ungraded case(s)")
+        requests = grade_results(results, judge, arguments.judge_batch_size)
+        print(f"Retried grading in {requests} request(s)", file=sys.stderr, flush=True)
 
     summary = summarize(results, options.top_k)
     print(format_report(summary, results))
@@ -283,6 +289,18 @@ def run_evaluation(arguments: argparse.Namespace, settings: Settings) -> None:
         encoding="utf-8",
     )
     print(f"\nSaved {output_path}")
+
+
+def _positive_int(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {value}")
+    return value
+
+
+def _pause_before_retry(what: str) -> None:
+    print(f"Retrying {what} in {EVAL_RETRY_DELAY_SECONDS}s", file=sys.stderr, flush=True)
+    time.sleep(EVAL_RETRY_DELAY_SECONDS)
 
 
 def _current_git_commit() -> str | None:
