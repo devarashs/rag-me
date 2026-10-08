@@ -7,15 +7,16 @@ from rag_me.evaluation import (
     EvalCase,
     EvalCaseError,
     EvalOptions,
+    answer_case,
     failure_reasons,
     first_relevant_rank,
     format_report,
+    grade_results,
     load_eval_cases,
     result_record,
-    run_case,
     summarize,
 )
-from rag_me.judging import JudgeVerdict
+from rag_me.judging import GradingItem, JudgeVerdict
 from tests.fakes import FakeEmbedder
 from tests.test_answering import FakeGenerator, FakeSearcher, retrieved
 
@@ -46,23 +47,23 @@ def verdict(**overrides) -> JudgeVerdict:
 
 
 class FakeJudge:
+    """Returns the same verdict for every item, or raises; records each batch."""
+
     model_name = "fake-judge"
 
     def __init__(self, result: JudgeVerdict | Exception | None = None) -> None:
         self._result = result if result is not None else verdict()
-        self.calls: list[dict] = []
+        self.batches: list[list[GradingItem]] = []
 
-    def grade(self, *, question, sources, answer, expected_facts) -> JudgeVerdict:
-        self.calls.append(
-            {"question": question, "sources": sources, "answer": answer, "facts": expected_facts}
-        )
+    def grade_batch(self, items) -> dict[str, JudgeVerdict]:
+        self.batches.append(list(items))
         if isinstance(self._result, Exception):
             raise self._result
-        return self._result
+        return {item.case_id: self._result for item in items}
 
 
-def run(case: EvalCase, *, results=None, judge=None, generator=None) -> CaseResult:
-    return run_case(
+def answer(case: EvalCase, *, results=None, generator=None) -> CaseResult:
+    return answer_case(
         case,
         embedder=FakeEmbedder(),
         searcher=FakeSearcher(
@@ -71,9 +72,15 @@ def run(case: EvalCase, *, results=None, judge=None, generator=None) -> CaseResu
             else [retrieved("b.md#ts", 0.8), retrieved("a.md#go", 0.7)]
         ),
         generator=generator or FakeGenerator(["Arash writes Go [2]."]),
-        judge=judge or FakeJudge(),
         options=OPTIONS,
     )
+
+
+def run(case: EvalCase, *, results=None, judge=None, generator=None) -> CaseResult:
+    """Answer one case, then grade it on its own."""
+    result = answer(case, results=results, generator=generator)
+    grade_results([result], judge or FakeJudge(), batch_size=8)
+    return result
 
 
 # --- load_eval_cases ------------------------------------------------------------------
@@ -158,7 +165,7 @@ def test_first_relevant_rank(retrieved_ids, relevant, expected) -> None:
     assert first_relevant_rank(retrieved_ids, relevant) == expected
 
 
-# --- run_case --------------------------------------------------------------------
+# --- answer_case and grading ------------------------------------------------------
 
 
 def test_answer_case_records_retrieval_answer_citations_and_verdict() -> None:
@@ -171,8 +178,10 @@ def test_answer_case_records_retrieval_answer_citations_and_verdict() -> None:
     assert result.first_relevant_rank == 2
     assert result.answer == "Arash writes Go [2]."
     assert result.cited == [2]
-    assert judge.calls[0]["facts"] == ("writes Go",)
-    assert [s.chunk.chunk_id for s in judge.calls[0]["sources"]] == ["b.md#ts", "a.md#go"]
+    [[graded]] = judge.batches
+    assert graded.case_id == "knows-go"
+    assert graded.expected_facts == ("writes Go",)
+    assert [s.chunk.chunk_id for s in graded.sources] == ["b.md#ts", "a.md#go"]
 
 
 def test_gate_refusal_is_recorded_without_calling_judge_but_keeps_retrieval() -> None:
@@ -182,7 +191,7 @@ def test_gate_refusal_is_recorded_without_calling_judge_but_keeps_retrieval() ->
 
     assert not result.gate_passed
     assert result.retrieved == [("a.md#go", 0.3)]
-    assert judge.calls == []
+    assert judge.batches == []
     assert not result.passed
     assert failure_reasons(result) == ["refused by the relevance gate"]
 
@@ -193,12 +202,83 @@ def test_gate_refusal_passes_a_decline_case() -> None:
     assert result.passed
 
 
-def test_exception_is_recorded_not_raised() -> None:
+def test_answering_exception_is_recorded_not_raised() -> None:
+    class BrokenGenerator(FakeGenerator):
+        def stream(self, system_instruction, prompt):
+            raise RuntimeError("model overloaded")
+            yield  # pragma: no cover - makes this a generator
+
+    result = answer(ANSWER_CASE, generator=BrokenGenerator())
+
+    assert result.error == "RuntimeError: model overloaded"
+    assert result.retrieved  # retrieval had already completed
+    assert not result.needs_grading
+    assert not result.passed
+
+
+def test_grading_failure_is_recorded_separately_and_keeps_the_answer() -> None:
     result = run(ANSWER_CASE, judge=FakeJudge(RuntimeError("judge overloaded")))
 
-    assert result.error == "RuntimeError: judge overloaded"
-    assert result.retrieved  # retrieval had already completed
+    assert result.error is None
+    assert result.grading_error == "RuntimeError: judge overloaded"
+    assert result.answer == "Arash writes Go [2]."
+    assert result.needs_grading
+    assert failure_reasons(result) == ["error: RuntimeError: judge overloaded"]
     assert not result.passed
+
+
+def test_grade_results_batches_only_cases_that_need_grading() -> None:
+    answered = [answer(ANSWER_CASE) for _ in range(5)]
+    for index, result in enumerate(answered):
+        result.case = EvalCase(f"case-{index}", "fact", "Q?", "answer", ("a.md#go",), ("f",))
+    refused = answer(DECLINE_CASE, results=[retrieved("c.md#other", 0.3)])
+    judge = FakeJudge()
+
+    requests = grade_results([*answered, refused], judge, batch_size=2)
+
+    assert requests == 3
+    assert [[item.case_id for item in batch] for batch in judge.batches] == [
+        ["case-0", "case-1"],
+        ["case-2", "case-3"],
+        ["case-4"],
+    ]
+    assert all(result.verdict is not None for result in answered)
+
+
+def test_a_failed_batch_is_retried_alone_and_clears_its_error() -> None:
+    results = [answer(ANSWER_CASE) for _ in range(3)]
+    for index, result in enumerate(results):
+        result.case = EvalCase(f"case-{index}", "fact", "Q?", "answer", ("a.md#go",), ("f",))
+
+    class FailsSecondBatchOnce(FakeJudge):
+        def grade_batch(self, items):
+            self.batches.append(list(items))
+            if len(self.batches) == 2:
+                raise RuntimeError("overloaded")
+            return {item.case_id: verdict() for item in items}
+
+    judge = FailsSecondBatchOnce()
+    grade_results(results, judge, batch_size=2)
+
+    assert [r.grading_error is not None for r in results] == [False, False, True]
+
+    retry_requests = grade_results(results, judge, batch_size=2)
+
+    assert retry_requests == 1
+    assert [item.case_id for item in judge.batches[-1]] == ["case-2"]
+    assert all(r.grading_error is None and r.verdict is not None for r in results)
+
+
+def test_nothing_to_grade_makes_no_requests() -> None:
+    judge = FakeJudge()
+
+    assert grade_results([], judge, batch_size=8) == 0
+    assert judge.batches == []
+
+
+def test_batch_size_below_one_is_rejected() -> None:
+    with pytest.raises(ValueError, match="batch_size"):
+        grade_results([], FakeJudge(), batch_size=0)
 
 
 # --- pass rules -----------------------------------------------------------------------

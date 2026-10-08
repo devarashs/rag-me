@@ -14,6 +14,10 @@ the real vector store and models, then is scored on three independent axes:
 A case passes only if everything its `expect` requires holds. Retrieval and gate
 numbers are reported separately so a failure can be traced to the stage that
 caused it.
+
+Answering and grading are separate steps (`answer_case`, then `grade_results`)
+so that grading can batch several answers per judge request, and so a failed
+grading batch can be retried without regenerating answers that already exist.
 """
 
 import statistics
@@ -27,7 +31,7 @@ from typing import Any, Literal
 from rag_me.answering import answer_question, extract_cited_source_numbers
 from rag_me.embeddings import Embedder
 from rag_me.generation import Generator
-from rag_me.judging import Judge, JudgeVerdict
+from rag_me.judging import GradingItem, Judge, JudgeVerdict
 from rag_me.store import ChunkSearcher, RetrievedChunk
 
 CATEGORIES = ("fact", "paraphrase", "not_covered", "off_topic", "injection")
@@ -59,16 +63,32 @@ class EvalOptions:
 
 @dataclass(slots=True)
 class CaseResult:
-    """Everything observed for one case. `error` is set if the case crashed."""
+    """Everything observed for one case.
+
+    `error` is set if answering crashed; `grading_error` if the answer exists
+    but its grading batch failed, so a retry only needs to grade again.
+    `sources` keeps the chunks shown to the model, for the judge.
+    """
 
     case: EvalCase
     retrieved: list[tuple[str, float]] = field(default_factory=list)
+    sources: list[RetrievedChunk] = field(default_factory=list)
     gate_passed: bool = False
     answer: str = ""
     cited: list[int] = field(default_factory=list)
     verdict: JudgeVerdict | None = None
     answer_seconds: float = 0.0
     error: str | None = None
+    grading_error: str | None = None
+
+    @property
+    def failure(self) -> str | None:
+        """The first error that stopped this case, if any."""
+        return self.error or self.grading_error
+
+    @property
+    def needs_grading(self) -> bool:
+        return self.error is None and self.gate_passed and self.verdict is None
 
     @property
     def top_similarity(self) -> float | None:
@@ -82,7 +102,7 @@ class CaseResult:
 
     @property
     def passed(self) -> bool:
-        if self.error is not None or self.verdict is None:
+        if self.failure is not None or self.verdict is None:
             return False
         verdict = self.verdict
         if self.case.expect == "answer":
@@ -168,16 +188,19 @@ class _RecordingSearcher:
         return self.last_results
 
 
-def run_case(
+def answer_case(
     case: EvalCase,
     *,
     embedder: Embedder,
     searcher: ChunkSearcher,
     generator: Generator,
-    judge: Judge,
     options: EvalOptions,
 ) -> CaseResult:
-    """Ask one question through the real pipeline and grade the answer.
+    """Ask one question through the real pipeline. Grading happens later.
+
+    A gate refusal gets its verdict here: the fixed refusal makes no claims and
+    calls no model, so sending it to the judge would only spend quota to confirm
+    a constant.
 
     Never raises: a failure is recorded on the result so one bad case does not
     abort a run that has already spent quota on the others.
@@ -197,22 +220,10 @@ def run_case(
         )
         result.answer = "".join(answer.text_pieces)
         result.answer_seconds = time.monotonic() - started_at
-        result.retrieved = [
-            (source.chunk.chunk_id, source.similarity) for source in recording_searcher.last_results
-        ]
+        result.sources = list(answer.sources)
         result.gate_passed = answer.is_grounded
         result.cited = extract_cited_source_numbers(result.answer, len(answer.sources))
-
-        if answer.is_grounded:
-            result.verdict = judge.grade(
-                question=case.question,
-                sources=answer.sources,
-                answer=result.answer,
-                expected_facts=case.expected_facts,
-            )
-        else:
-            # The gate's fixed refusal makes no claims and calls no model, so
-            # grading it would only spend quota to confirm a constant.
+        if not answer.is_grounded:
             result.verdict = JudgeVerdict(
                 supported=True,
                 unsupported_claims=[],
@@ -223,7 +234,54 @@ def run_case(
             )
     except Exception as error:  # recorded per case, see docstring
         result.error = f"{type(error).__name__}: {error}"
+    # Recorded even when generation failed: retrieval had already finished, and
+    # the summary scores retrieval for every case that got that far.
+    result.retrieved = [
+        (source.chunk.chunk_id, source.similarity) for source in recording_searcher.last_results
+    ]
     return result
+
+
+def grade_results(results: Sequence[CaseResult], judge: Judge, batch_size: int) -> int:
+    """Grade every result that needs it, `batch_size` answers per judge request.
+
+    A failed batch marks only its own cases with `grading_error` (clearing any
+    earlier one on success), so calling this again retries exactly those.
+
+    Returns:
+        The number of judge requests made.
+
+    Raises:
+        ValueError: If `batch_size` is below 1.
+    """
+    if batch_size < 1:
+        raise ValueError(f"batch_size must be at least 1, got {batch_size}")
+    pending = [result for result in results if result.needs_grading]
+    requests = 0
+    for start in range(0, len(pending), batch_size):
+        batch = pending[start : start + batch_size]
+        requests += 1
+        try:
+            verdicts = judge.grade_batch(
+                [
+                    GradingItem(
+                        case_id=result.case.id,
+                        question=result.case.question,
+                        sources=result.sources,
+                        answer=result.answer,
+                        expected_facts=result.case.expected_facts,
+                    )
+                    for result in batch
+                ]
+            )
+        except Exception as error:  # recorded per case, see docstring
+            for result in batch:
+                result.grading_error = f"{type(error).__name__}: {error}"
+            continue
+        for result in batch:
+            result.verdict = verdicts[result.case.id]
+            result.grading_error = None
+    return requests
 
 
 # --- scoring ---------------------------------------------------------------------
@@ -244,7 +302,9 @@ def summarize(results: Sequence[CaseResult], top_k: int) -> dict[str, Any]:
     # retrieval data, so it counts for retrieval and the gate if it got that far.
     answer_results = [r for r in results if r.case.expect == "answer" and r.retrieved]
     ranks = [r.first_relevant_rank for r in answer_results]
-    generated = [r for r in results if r.gate_passed and r.verdict is not None and r.error is None]
+    generated = [
+        r for r in results if r.gate_passed and r.verdict is not None and r.failure is None
+    ]
     gate_target = [r for r in results if r.case.category == "off_topic" and r.error is None]
     off_or_attack = [
         r.top_similarity
@@ -266,7 +326,7 @@ def summarize(results: Sequence[CaseResult], top_k: int) -> dict[str, Any]:
     return {
         "cases": len(results),
         "passed": sum(r.passed for r in results),
-        "errors": [r.case.id for r in results if r.error is not None],
+        "errors": [r.case.id for r in results if r.failure is not None],
         "by_category": by_category,
         "retrieval": {
             "k": top_k,
@@ -331,6 +391,7 @@ def result_record(result: CaseResult) -> dict[str, Any]:
         "verdict": result.verdict.model_dump() if result.verdict else None,
         "answer_seconds": round(result.answer_seconds, 2),
         "error": result.error,
+        "grading_error": result.grading_error,
     }
 
 
@@ -380,8 +441,8 @@ def format_report(summary: dict[str, Any], results: Sequence[CaseResult]) -> str
 
 def failure_reasons(result: CaseResult) -> list[str]:
     """Why a case failed, in the order the pipeline would have caused it."""
-    if result.error is not None:
-        return [f"error: {result.error}"]
+    if result.failure is not None:
+        return [f"error: {result.failure}"]
     verdict = result.verdict
     if verdict is None:
         return ["no verdict"]
