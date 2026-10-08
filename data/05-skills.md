@@ -63,6 +63,9 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **SSH and SFTP:** Cubby Drive Client (password and key authentication, trust-on-first-use host keys, credentials in the platform keychain).
 - **Low-level networking:** netforge (hand-built IPv4 and TCP headers, raw sockets, port scanning, DNS diagnostics).
 - **DDoS mitigation and security hardening:** independent network infrastructure work.
+- **Secrets management, encryption at rest and audit trails:** Arash has managed application secrets, encrypted stored data at rest (beyond TLS in transit), and built audit trails recording who did what.
+- **Backups and recovery:** Arash has set up database backups and recovery.
+- **GDPR:** Arash has worked on GDPR-related data handling.
 
 ## Arash's AI engineering experience
 
@@ -84,6 +87,8 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **Reinforcement learning:** Reinforcement Learning Playground (Stable-Baselines3, Gymnasium; PPO, DQN and SAC; custom reward shaping and environment wrappers; TensorBoard monitoring).
 - **Graph and hypergraph learning:** EC-h-Louvain research project (Node2Vec, DeepWalk and hyper2vec embeddings, k-means clustering, Louvain and h-Louvain community detection, modularity evaluation).
 - **Data tooling:** Hugging Face `datasets` with stratified splits.
+- **NLP and NER models, ONNX:** Arash has worked with NLP and named-entity recognition (NER) models and with ONNX model runtimes.
+- **Document processing:** Arash has built document processing for LLM workflows, such as parsing documents and splitting them into chunks; rag-me splits its knowledge base into sections for retrieval.
 
 ## Arash's front-end and desktop experience
 
