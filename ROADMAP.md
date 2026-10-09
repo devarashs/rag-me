@@ -70,8 +70,16 @@ current item.
 
 ## Phase 4: improve (each change measured against the evaluation set)
 
-- [ ] Hybrid search: Postgres full-text combined with vector similarity  <-- next
+- [x] Hybrid search: Postgres full-text combined with vector similarity
       Motivated by the "kubernetes" miss: rare exact terms are diluted in embeddings.
+      Result (2026-10-09): BM25 over a generated tsvector column, fused with
+      vector rank by reciprocal rank fusion (k=60), one SQL round trip; the gate
+      still uses vector similarity. On the same 25 answer cases: hit@1 0.84->0.88,
+      hit@5 0.92->0.96, MRR 0.88->0.90; gate unchanged. New single-mention tool
+      cases (sentry, twilio, onnx, react-admin, kubernetes): 2/5 -> 5/5 with
+      HYBRID_SEARCH=false vs true. Caveat: keyword-only finds land at rank ~5,
+      the last slot, because RRF ties go to higher vector similarity.
+      Remaining: re-grade the cases the judge quota cut off on 2026-10-09.
 - [ ] Re-ranking of retrieved chunks
 - [ ] Query rewriting for vague or multi-part questions
 - [ ] Request tracing (Langfuse free tier)

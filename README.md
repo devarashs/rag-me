@@ -47,9 +47,14 @@ flowchart LR
    Ingest fingerprints the exact text sent to the model plus the model name, so
    a re-run embeds only what changed and removes deleted sections, all in one
    transaction.
-3. **Retrieval.** The question is embedded with Gemini's question-answering
-   prefix and the five closest sections are found by cosine distance in pgvector.
-   At about 90 rows an exact scan is faster than an approximate index, and exact.
+3. **Retrieval (hybrid).** Two searches run in one SQL query and are merged
+   with reciprocal rank fusion. Vector search finds sections with the same
+   meaning (cosine distance in pgvector; at about 90 rows an exact scan beats an
+   approximate index). Keyword search scores Postgres full-text matches with
+   BM25, so a name mentioned once, such as a tool inside a long section, still
+   finds its section; words found in most sections, like "Arash", are ignored.
+   On the evaluation suite this raised hit@5 from 0.92 to 0.96 and fixed every
+   single-mention tool lookup.
 4. **Relevance gate.** If even the best match is below 0.62 similarity, the bot
    answers "I don't know" without calling the language model. In measurement,
    off-topic questions scored at most 0.59 and real ones at least 0.65. The gate
@@ -135,6 +140,7 @@ Set in `.env` locally or as environment variables in production. See
 | `EMBEDDING_MODEL` | | `gemini-embedding-2` |
 | `MIN_SIMILARITY` | | `0.62` |
 | `RETRIEVAL_TOP_K` | | `5` |
+| `HYBRID_SEARCH` | | `true` (`false` = vector only, for comparison) |
 | `VISITOR_RATE_LIMIT_REQUESTS` / `_WINDOW_SECONDS` | | 10 per 600 s |
 | `DAILY_QUESTION_CAP` | | `200` |
 
