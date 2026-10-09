@@ -59,6 +59,7 @@ class EvalOptions:
     top_k: int
     min_similarity: float
     contact_email: str
+    hybrid_search: bool = True
 
 
 @dataclass(slots=True)
@@ -92,7 +93,8 @@ class CaseResult:
 
     @property
     def top_similarity(self) -> float | None:
-        return self.retrieved[0][1] if self.retrieved else None
+        # The maximum, not the first: hybrid ranking is not similarity order.
+        return max(similarity for _, similarity in self.retrieved) if self.retrieved else None
 
     @property
     def first_relevant_rank(self) -> int | None:
@@ -183,8 +185,10 @@ class _RecordingSearcher:
         self._inner = inner
         self.last_results: list[RetrievedChunk] = []
 
-    def search(self, query_embedding: Sequence[float], limit: int) -> list[RetrievedChunk]:
-        self.last_results = self._inner.search(query_embedding, limit)
+    def search(
+        self, question: str, query_embedding: Sequence[float], limit: int
+    ) -> list[RetrievedChunk]:
+        self.last_results = self._inner.search(question, query_embedding, limit)
         return self.last_results
 
 

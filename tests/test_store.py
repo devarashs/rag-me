@@ -162,7 +162,7 @@ def store_with_three_directions(migrated_schema_connection) -> PostgresChunkStor
 
 
 def test_search_orders_by_cosine_similarity(store_with_three_directions) -> None:
-    results = store_with_three_directions.search(direction(1.0, 0.0), limit=3)
+    results = store_with_three_directions.search("", direction(1.0, 0.0), limit=3)
 
     assert [result.chunk.chunk_id for result in results] == [
         "a.md#same",
@@ -173,27 +173,122 @@ def test_search_orders_by_cosine_similarity(store_with_three_directions) -> None
 
 
 def test_search_returns_full_chunk_content(store_with_three_directions) -> None:
-    [top] = store_with_three_directions.search(direction(1.0, 0.0), limit=1)
+    [top] = store_with_three_directions.search("", direction(1.0, 0.0), limit=1)
 
     assert top.chunk == Chunk("a.md#same", "a.md", "Doc", "Heading", "Body of a.md#same.")
 
 
 def test_search_similarity_ignores_vector_length(store_with_three_directions) -> None:
-    [top] = store_with_three_directions.search(direction(5.0, 0.0), limit=1)
+    [top] = store_with_three_directions.search("", direction(5.0, 0.0), limit=1)
 
     assert top.similarity == pytest.approx(1.0, abs=1e-6)
 
 
 def test_search_limit_caps_results(store_with_three_directions) -> None:
-    assert len(store_with_three_directions.search(direction(1.0, 0.0), limit=2)) == 2
-    assert len(store_with_three_directions.search(direction(1.0, 0.0), limit=50)) == 3
+    assert len(store_with_three_directions.search("", direction(1.0, 0.0), limit=2)) == 2
+    assert len(store_with_three_directions.search("", direction(1.0, 0.0), limit=50)) == 3
 
 
 @pytest.mark.parametrize("limit", [0, -1, 51])
 def test_search_rejects_out_of_range_limit(migrated_schema_connection, limit: int) -> None:
     with pytest.raises(ValueError, match="limit must be between 1 and 50"):
-        PostgresChunkStore(migrated_schema_connection).search(direction(1.0, 0.0), limit=limit)
+        PostgresChunkStore(migrated_schema_connection).search("", direction(1.0, 0.0), limit=limit)
 
 
 def test_search_on_empty_table_returns_nothing(migrated_schema_connection) -> None:
-    assert PostgresChunkStore(migrated_schema_connection).search(direction(1.0, 0.0), limit=5) == []
+    assert (
+        PostgresChunkStore(migrated_schema_connection).search("", direction(1.0, 0.0), limit=5)
+        == []
+    )
+
+
+# --- hybrid search ----------------------------------------------------------------
+
+
+def chunk_with(chunk_id: str, body: str, vector: list[float]) -> EmbeddedChunk:
+    return EmbeddedChunk(
+        chunk=Chunk(chunk_id, chunk_id.split("#")[0], "Doc", chunk_id.split("#")[1], body),
+        embedding_model="model",
+        embedding_input_hash="h",
+        embedding=vector,
+    )
+
+
+@pytest.fixture
+def corpus_with_one_rare_term(migrated_schema_connection) -> psycopg.Connection:
+    """Six sections that all mention Arash. Only the launcher one names Sentry, and
+    its vector points away from the query, as a multi-topic section's would."""
+    rows = [
+        chunk_with("a.md#faq-start", "Arash can start immediately.", direction(1.0, 0.0)),
+        chunk_with("a.md#faq-go", "Arash writes Go for networking tools.", direction(0.98, 0.2)),
+        chunk_with("a.md#faq-ai", "Arash built AI products with agents.", direction(0.95, 0.3)),
+        chunk_with("a.md#faq-tests", "Arash wrote thousands of tests.", direction(0.9, 0.4)),
+        chunk_with("a.md#faq-mcp", "Arash built an MCP server for agents.", direction(0.85, 0.5)),
+        chunk_with(
+            "b.md#launcher",
+            "Arash built the Electron launcher with auto-updates, code signing, delta "
+            "patching and content-addressed uploads, and added Sentry for crash reporting.",
+            direction(0.0, 1.0),
+        ),
+    ]
+    PostgresChunkStore(migrated_schema_connection).sync(
+        rows, keep_ids=[r.chunk.chunk_id for r in rows]
+    )
+    return migrated_schema_connection
+
+
+def test_hybrid_search_finds_a_term_mentioned_once(corpus_with_one_rare_term) -> None:
+    store = PostgresChunkStore(corpus_with_one_rare_term)
+
+    results = store.search("Has Arash used Sentry?", direction(1.0, 0.0), limit=3)
+
+    assert "b.md#launcher" in [r.chunk.chunk_id for r in results]
+
+
+def test_vector_only_search_misses_it(corpus_with_one_rare_term) -> None:
+    store = PostgresChunkStore(corpus_with_one_rare_term, hybrid_search=False)
+
+    results = store.search("Has Arash used Sentry?", direction(1.0, 0.0), limit=3)
+
+    assert "b.md#launcher" not in [r.chunk.chunk_id for r in results]
+
+
+def test_keyword_only_result_reports_its_true_cosine_similarity(corpus_with_one_rare_term) -> None:
+    results = PostgresChunkStore(corpus_with_one_rare_term).search(
+        "Has Arash used Sentry?", direction(1.0, 0.0), limit=3
+    )
+
+    launcher = next(r for r in results if r.chunk.chunk_id == "b.md#launcher")
+    assert launcher.similarity == pytest.approx(0.0, abs=1e-6)  # orthogonal to the query
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Arash",  # in every section: ignored as a keyword
+        "",  # no terms
+        "Has the?",  # stopwords only
+        "What's O'Reilly's & Arash's | take?",  # quotes and tsquery operators
+    ],
+)
+def test_questions_without_useful_terms_fall_back_to_vector_order(
+    corpus_with_one_rare_term, question: str
+) -> None:
+    hybrid = PostgresChunkStore(corpus_with_one_rare_term).search(
+        question, direction(1.0, 0.0), limit=6
+    )
+    vector = PostgresChunkStore(corpus_with_one_rare_term, hybrid_search=False).search(
+        question, direction(1.0, 0.0), limit=6
+    )
+
+    assert [r.chunk.chunk_id for r in hybrid] == [r.chunk.chunk_id for r in vector]
+
+
+def test_hybrid_results_are_unique_and_capped(corpus_with_one_rare_term) -> None:
+    results = PostgresChunkStore(corpus_with_one_rare_term).search(
+        "Arash Sentry launcher agents tests", direction(1.0, 0.0), limit=4
+    )
+
+    chunk_ids = [r.chunk.chunk_id for r in results]
+    assert len(chunk_ids) == 4
+    assert len(set(chunk_ids)) == 4

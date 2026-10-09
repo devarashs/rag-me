@@ -14,6 +14,7 @@ CONFIG_VARIABLES = [
     "RETRIEVAL_TOP_K",
     "MIN_SIMILARITY",
     "CONTACT_EMAIL",
+    "HYBRID_SEARCH",
     "RATE_LIMIT_HASH_KEY",
     "VISITOR_RATE_LIMIT_REQUESTS",
     "VISITOR_RATE_LIMIT_WINDOW_SECONDS",
@@ -50,6 +51,7 @@ def test_reads_required_values_and_applies_defaults(valid_environment) -> None:
     assert settings.retrieval_top_k == 5
     assert settings.min_similarity == 0.62
     assert settings.contact_email == "me@devarash.icu"
+    assert settings.hybrid_search is True
 
 
 def test_reads_env_file_and_ignores_unrelated_variables(tmp_path) -> None:
@@ -100,6 +102,7 @@ def test_postgres_scheme_alias_is_accepted(valid_environment) -> None:
         ("RETRIEVAL_TOP_K", "20", "retrieval_top_k", 20),
         ("MIN_SIMILARITY", "0", "min_similarity", 0.0),
         ("CONTACT_EMAIL", "hello@example.test", "contact_email", "hello@example.test"),
+        ("HYBRID_SEARCH", "false", "hybrid_search", False),
     ],
 )
 def test_answering_settings_can_be_overridden(

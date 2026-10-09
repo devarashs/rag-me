@@ -29,10 +29,12 @@ def retrieved(chunk_id: str, similarity: float, body: str = "Body.") -> Retrieve
 class FakeSearcher:
     def __init__(self, results: list[RetrievedChunk]) -> None:
         self._results = results
-        self.calls: list[tuple[Sequence[float], int]] = []
+        self.calls: list[tuple[str, Sequence[float], int]] = []
 
-    def search(self, query_embedding: Sequence[float], limit: int) -> list[RetrievedChunk]:
-        self.calls.append((query_embedding, limit))
+    def search(
+        self, question: str, query_embedding: Sequence[float], limit: int
+    ) -> list[RetrievedChunk]:
+        self.calls.append((question, query_embedding, limit))
         return self._results[:limit]
 
 
@@ -74,9 +76,35 @@ def test_question_is_embedded_normalized_and_searched_with_top_k() -> None:
 
     ask("  Does   Arash\n know Go? ", searcher, FakeGenerator(), top_k=3)
 
-    [(query_embedding, limit)] = searcher.calls
+    [(question, query_embedding, limit)] = searcher.calls
     assert limit == 3
+    # The text goes to keyword search, the embedding to vector search.
+    assert question == "Does Arash know Go?"
     assert query_embedding == FakeEmbedder().embed_query("Does Arash know Go?")
+
+
+def test_gate_uses_the_best_similarity_not_the_first_result() -> None:
+    # Hybrid search can rank a keyword match first even when its vector
+    # similarity is low; the gate must still see the most similar section.
+    generator = FakeGenerator()
+    results = [retrieved("a.md#keyword-hit", 0.40), retrieved("b.md#similar", 0.80)]
+
+    answer = ask("Has Arash used Sentry?", FakeSearcher(results), generator)
+    list(answer.text_pieces)  # the generator only runs when its stream is read
+
+    assert answer.is_grounded
+    assert answer.sources == results
+    assert len(generator.calls) == 1
+
+
+def test_gate_refuses_when_every_result_is_below_threshold() -> None:
+    generator = FakeGenerator()
+    results = [retrieved("a.md#x", 0.50), retrieved("b.md#y", 0.61)]
+
+    answer = ask("Capital of France?", FakeSearcher(results), generator)
+
+    assert not answer.is_grounded
+    assert generator.calls == []
 
 
 def test_generator_receives_rules_and_numbered_sources() -> None:
