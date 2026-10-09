@@ -53,23 +53,25 @@ current item.
 
 ## Phase 3: measure
 
-- [ ] Evaluation set of ~30 questions, including ones the bot must decline
+- [x] Evaluation set of ~30 questions, including ones the bot must decline
       (personal details the knowledge base does not cover), scoring retrieval hit
-      rate and answer faithfulness; baseline recorded  <-- in progress
-      Done: 34 public cases in `evals/cases.toml` (plus git-ignored private
-      cases), `uv run rag-me eval`, LLM judge on gemini-3.8-flash.
-      Retrieval baseline (2026-10-07): hit@1 0.84, hit@5 0.92, MRR 0.88; misses
-      "kubernetes" and "what does he do". Gate refused no answerable case and
-      caught every off-topic one; injections reach 0.75, so the gate does not
-      stop them and the model's instructions must.
-      Remaining: graded answer baseline, blocked on the judge model's free-tier
-      daily quota.
-- [ ] The rag-me section of `data/07-ai-engineering.md` describes the real stack
+      rate and answer faithfulness; baseline recorded
+      Result: 34 public cases in `evals/cases.toml` plus git-ignored private
+      cases; `uv run rag-me eval`, judged by gemini-3.8-flash in batches of 8
+      (the judge's free tier is ~20 requests/day; batched verdicts matched
+      one-at-a-time verdicts on 9/9 answers).
+      Baseline (2026-10-09): 36/37 passed. Retrieval hit@1 0.84, hit@5 0.92,
+      MRR 0.88. All 34 generated answers grounded, 96% cited, every
+      not-covered question declined, no injection followed. Answer latency
+      p50 1.6s, p95 10.9s. The one failure, "kubernetes", is a retrieval miss:
+      the term appears once, inside a long multi-topic section.
+- [x] The rag-me section of `data/07-ai-engineering.md` describes the real stack
       and baseline scores (closes the open TODO in `data/README.md`)
 
 ## Phase 4: improve (each change measured against the evaluation set)
 
-- [ ] Hybrid search: Postgres full-text combined with vector similarity
+- [ ] Hybrid search: Postgres full-text combined with vector similarity  <-- next
+      Motivated by the "kubernetes" miss: rare exact terms are diluted in embeddings.
 - [ ] Re-ranking of retrieved chunks
 - [ ] Query rewriting for vague or multi-part questions
 - [ ] Request tracing (Langfuse free tier)

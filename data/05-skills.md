@@ -78,6 +78,7 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **Real-time voice AI:** real-time voice chat in Hypersonic's multi-agent harness on Alibaba Cloud's Qwen realtime model, with voice activity detection (VAD), turn management and barge-in, noise suppression, and audio buffering and streaming built by Arash.
 - **Speech-to-text and text-to-speech:** voice messages to the text agents through an STT model, and read-aloud replies through a TTS model, at Hypersonic.
 - **Agent memory and context management:** conversation history, session summarisation and provider-side prompt caching for the text and voice agents at Hypersonic.
+- **Local embedding models:** Arash has run embedding models locally, not only through hosted APIs.
 - **RAG and LLM evaluation:** rag-me, a framework-free RAG system on pgvector with a 34-case evaluation suite (retrieval hit@k and MRR, relevance-gate checks, LLM-as-judge answer grading).
 - **AI-assisted development:** Claude Code daily with custom skill files.
 
