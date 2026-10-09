@@ -177,7 +177,7 @@ def ask(question: str, settings: Settings, *, verbose: bool) -> None:
             embedder=GeminiEmbedder(
                 client, settings.embedding_model, settings.embedding_batch_size
             ),
-            searcher=PostgresChunkStore(connection),
+            searcher=PostgresChunkStore(connection, hybrid_search=settings.hybrid_search),
             generator=GeminiGenerator(client, settings.generation_model),
             top_k=settings.retrieval_top_k,
             min_similarity=settings.min_similarity,
@@ -228,6 +228,7 @@ def run_evaluation(arguments: argparse.Namespace, settings: Settings) -> None:
         top_k=settings.retrieval_top_k,
         min_similarity=settings.min_similarity,
         contact_email=settings.contact_email,
+        hybrid_search=settings.hybrid_search,
     )
     client = create_gemini_client(settings.google_ai_api_key.get_secret_value())
     embedder = GeminiEmbedder(client, settings.embedding_model, settings.embedding_batch_size)
@@ -235,7 +236,7 @@ def run_evaluation(arguments: argparse.Namespace, settings: Settings) -> None:
     judge = GeminiJudge(client, arguments.judge_model)
 
     with connect(settings.database_url.get_secret_value()) as connection:
-        searcher = PostgresChunkStore(connection)
+        searcher = PostgresChunkStore(connection, hybrid_search=options.hybrid_search)
 
         def answer(case: EvalCase) -> CaseResult:
             return answer_case(

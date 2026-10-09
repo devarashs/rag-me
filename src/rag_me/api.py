@@ -217,7 +217,7 @@ def create_production_app() -> FastAPI:
     dependencies = ApiDependencies(
         embedder=GeminiEmbedder(client, settings.embedding_model, settings.embedding_batch_size),
         generator=GeminiGenerator(client, settings.generation_model),
-        searcher=PooledChunkSearcher(pool),
+        searcher=PooledChunkSearcher(pool, hybrid_search=settings.hybrid_search),
         rate_limiter=PooledRateLimiter(
             pool,
             visitor_policy=RateLimitPolicy(
@@ -244,12 +244,15 @@ def create_production_app() -> FastAPI:
 class PooledChunkSearcher:
     """`ChunkSearcher` that borrows a pooled connection only for the query."""
 
-    def __init__(self, pool: ConnectionPool) -> None:
+    def __init__(self, pool: ConnectionPool, *, hybrid_search: bool = True) -> None:
         self._pool = pool
+        self._hybrid_search = hybrid_search
 
-    def search(self, query_embedding, limit: int) -> list[RetrievedChunk]:
+    def search(self, question: str, query_embedding, limit: int) -> list[RetrievedChunk]:
         with self._pool.connection() as connection:
-            return PostgresChunkStore(connection).search(query_embedding, limit)
+            return PostgresChunkStore(connection, hybrid_search=self._hybrid_search).search(
+                question, query_embedding, limit
+            )
 
 
 class PooledRateLimiter:

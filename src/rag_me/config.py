@@ -73,6 +73,11 @@ class Settings(BaseSettings):
         description="Below this best-match similarity, answer 'I don't know' without "
         "calling the model.",
     )
+    hybrid_search: bool = Field(
+        default=True,
+        description="Combine BM25 keyword search with vector search. False is vector only, "
+        "kept to compare the two on the evaluation suite.",
+    )
     contact_email: str = Field(
         default="me@devarash.icu",
         pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",

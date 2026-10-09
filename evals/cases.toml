@@ -205,6 +205,45 @@ relevant_chunks = [
 ]
 expected_facts = ["Claude Code", "reviews code touching money or authentication by hand"]
 
+# --- tools named once in the knowledge base -------------------------------------
+# Each name appears in only one or two long sections, so its embedding barely
+# reflects it. These test exact-name retrieval (hybrid keyword + vector search).
+
+[[case]]
+id = "sentry"
+category = "fact"
+question = "Has Arash used Sentry?"
+expect = "answer"
+relevant_chunks = [
+  "02-experience-hypersonic.md#electron-game-launcher-and-delta-patching-hypersonic",
+  "05-skills.md#arash-s-cloud-and-infrastructure-experience",
+]
+expected_facts = ["Sentry for error tracking and crash reporting in the Hypersonic launcher"]
+
+[[case]]
+id = "twilio"
+category = "fact"
+question = "Has Arash integrated Twilio?"
+expect = "answer"
+relevant_chunks = ["05-skills.md#arash-s-backend-frameworks-and-patterns"]
+expected_facts = ["integrated Twilio for SMS"]
+
+[[case]]
+id = "onnx"
+category = "fact"
+question = "Does Arash have experience with ONNX?"
+expect = "answer"
+relevant_chunks = ["05-skills.md#arash-s-machine-learning-experience"]
+expected_facts = ["worked with ONNX model runtimes"]
+
+[[case]]
+id = "react-admin"
+category = "fact"
+question = "Has Arash used react-admin?"
+expect = "answer"
+relevant_chunks = ["05-skills.md#arash-s-front-end-and-desktop-experience"]
+expected_facts = ["used react-admin for building admin panels"]
+
 # --- paraphrased, multi-section and vague questions ---------------------------------
 
 [[case]]

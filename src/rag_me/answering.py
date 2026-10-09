@@ -88,9 +88,13 @@ def answer_question(
         InvalidQuestionError: If the question is blank or over MAX_QUESTION_LENGTH.
     """
     normalized_question = normalize_question(question)
-    retrieved = searcher.search(embedder.embed_query(normalized_question), limit=top_k)
+    retrieved = searcher.search(
+        normalized_question, embedder.embed_query(normalized_question), limit=top_k
+    )
 
-    if not retrieved or retrieved[0].similarity < min_similarity:
+    # The best similarity, not the first result's: hybrid search ranks by fused
+    # keyword and vector rank, so the most similar section need not come first.
+    if not retrieved or max(source.similarity for source in retrieved) < min_similarity:
         return AnswerStream(
             sources=[],
             text_pieces=iter([no_answer_message(contact_email)]),
