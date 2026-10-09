@@ -51,7 +51,7 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **OVH, Hetzner, DigitalOcean:** alongside AWS EC2 and Lightsail, the providers behind the 20+ server fleet in the independent network infrastructure work.
 - **Docker, Linux, Nginx, Caddy, Bash:** service packaging and server operations, including a self-managed fleet of 20+ servers.
 - **CI/CD and environments:** Hypersonic platform, where Arash built a pre-deploy test pipeline and separate dev, staging and production environments; cross-platform release builds with GitHub Actions for open-source Go tools; fully automated semantic-version releases from Conventional Commits in netforge.
-- **Observability:** Prometheus metrics (sluice), watchdog across 10+ services with alerting (Hypersonic), traffic monitoring with anomaly detection (network infrastructure work).
+- **Observability:** Sentry error tracking in the Hypersonic Electron launcher, Prometheus metrics (sluice), watchdog across 10+ services with alerting (Hypersonic), traffic monitoring with anomaly detection (network infrastructure work).
 
 ## Arash's authentication and security experience
 
