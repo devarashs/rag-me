@@ -38,7 +38,7 @@ At Hypersonic Laboratories, Arash built Dreamer end to end, an AI product where 
 
 ## Electron game launcher and delta patching (Hypersonic)
 
-At Hypersonic Laboratories, Arash built the studio's desktop launcher in Electron: auto-updates, switching between environments, a verify-and-repair feature, content-addressed uploads, and an automated publishing CLI for creators. The launcher was code-signed with a certificate obtained through Microsoft Azure. He replaced fixed-size chunking with FastCDC content-defined chunking, which brought a 70 GiB Unreal editor update down to about 70 MB, where the comparable Steam update was around 50 GiB.
+At Hypersonic Laboratories, Arash built the studio's desktop launcher in Electron: auto-updates, switching between environments, a verify-and-repair feature, content-addressed uploads, and an automated publishing CLI for creators. The launcher was code-signed with a certificate obtained through Microsoft Azure, and Arash added Sentry to it for error tracking and crash reporting in production. He replaced fixed-size chunking with FastCDC content-defined chunking, which brought a 70 GiB Unreal editor update down to about 70 MB, where the comparable Steam update was around 50 GiB.
 
 ## Creator Hub and game-server provisioning (Hypersonic)
 
