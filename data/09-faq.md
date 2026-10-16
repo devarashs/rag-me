@@ -96,6 +96,14 @@ Yes. Arash is open to relocating worldwide, with the UAE and EU countries among 
 
 Only to relocate. Arash can work remotely as a contractor, or through an employer of record, for a company located anywhere, with no sponsorship needed; his most recent role, at UK-based Hypersonic Laboratories, was a contractor arrangement. To relocate to the US, UK, EU or Canada, he would need visa sponsorship.
 
+## Has Arash administered team tools like Jira, Linear or Google Workspace?
+
+Yes. At Hypersonic Laboratories Arash administered the studio's Linear (the main tracker, used heavily), Jira, Trello and Perforce, managing projects, workflows, members and access. He has also administered Google Workspace, Notion and a team password manager, at Hypersonic, in his independent network infrastructure work, as a freelancer and in his own projects. He has used ClickUp as a regular user, not as an administrator.
+
+## Does Arash have IT operations or automation experience (Make, Zapier)?
+
+Yes, alongside his engineering work. At Hypersonic Laboratories Arash handled account onboarding and offboarding, permissions and access levels, login and access troubleshooting, and access audits; there and in his independent network infrastructure work he also configured integrations, managed software licenses, tracked software spending and wrote technical documentation. For automation platforms, he built a small multi-step Make automation at Hypersonic that notified the team about meetings; his experience is with Make rather than Zapier. Heavier automation he builds directly against APIs and webhooks, such as the Telegram bots that automated billing in his network infrastructure work.
+
 ## How can I contact Arash?
 
 Email Arash at me@devarash.icu, or see https://devarash.icu and https://www.linkedin.com/in/arashsalehkhah/.

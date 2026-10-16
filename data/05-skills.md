@@ -53,6 +53,15 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **CI/CD and environments:** Hypersonic platform, where Arash built a pre-deploy test pipeline and separate dev, staging and production environments; cross-platform release builds with GitHub Actions for open-source Go tools; fully automated semantic-version releases from Conventional Commits in netforge.
 - **Observability:** Sentry error tracking in the Hypersonic Electron launcher, Prometheus metrics (sluice), watchdog across 10+ services with alerting (Hypersonic), traffic monitoring with anomaly detection (network infrastructure work).
 
+## Arash's IT operations and tool administration experience
+
+- **Team and project tools:** at Hypersonic Laboratories, Arash administered Linear (the main tracker, used heavily), Jira, Trello and Perforce: projects, workflows, members and access.
+- **Google Workspace, Notion and a team password manager:** Arash has administered Google Workspace (users, access and settings), Notion (workspace structure, members and permissions) and a team password manager (shared vaults and team access) at Hypersonic Laboratories, in his independent network infrastructure work, as a freelancer and in his own projects.
+- **Accounts and access:** at Hypersonic, Arash created and deactivated user accounts for onboarding and offboarding, managed permissions and access levels, troubleshot login and access issues, and conducted access audits.
+- **Integrations, licenses and documentation:** at Hypersonic and in his independent network infrastructure work, Arash configured integrations, managed software licenses, tracked software spending and wrote technical documentation.
+- **Automation platforms:** at Hypersonic, Arash built a small multi-step Make automation that notified the team about meetings. His automation-platform experience is with Make rather than Zapier; heavier automation he builds directly against APIs and webhooks, such as Telegram bots for automated billing and game-server provisioning through the OVH APIs.
+- **ClickUp:** Arash has used ClickUp as a regular user, not as an administrator.
+
 ## Arash's authentication and security experience
 
 - **OAuth 2.0 and OpenID Connect:** used heavily in the Hypersonic platform's authentication.
@@ -100,6 +109,7 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 - **Charts, PDF rendering and internationalisation (i18n):** Arash has built charting, PDF generation and multi-language interfaces in front-end work.
 - **Electron:** Hypersonic game launcher.
 - **three.js:** Dreamer world rendering.
+- **AI-first front-end development:** Arash builds React UIs mostly with AI coding agents. For Creator Hub, which had explicit designs, he gave Claude Code images of each component, had it build the components as reusable blocks, then assembled them into pages. The Electron launcher front end was also built AI-first, but from a general design direction rather than detailed designs. He has tried Lovable and GitHub Spark, but not used them in production.
 
 ## Arash's testing experience
 
@@ -113,7 +123,8 @@ Each skill lists where Arash actually used it, so answers can point to evidence.
 
 ## Gaps Arash is honest about
 
-- Only light Azure use (code signing and a few hosted game servers); no deeper Azure platform work such as landing zones, Entra ID or Front Door. No Kubernetes at scale or Terraform-heavy platform work.
+- Only light Azure use (code signing and a few hosted game servers); no deeper Azure platform work such as landing zones, Entra ID or Front Door.
+- Kubernetes only in experiments, never in production, and no Terraform-heavy platform work.
 - No dedicated security engineering (penetration testing, red teaming).
 - Python is a working skill, not Arash's primary language.
 - GraphQL only in small personal projects, never in production. Arash is confident he could pick it up for a production API, since it sits on the same backend fundamentals he uses daily.

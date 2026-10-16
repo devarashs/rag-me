@@ -2,11 +2,11 @@
 
 ## Location and time zone
 
-Arash Salehkhah is based in Yerevan, Armenia, in UTC+4. He overlaps fully with European working hours and with Gulf time zones, and has afternoon and evening overlap with US Eastern time.
+Arash Salehkhah is based in Yerevan, Armenia, in UTC+4. He overlaps fully with European working hours (CET and EET) and with Gulf time zones, and has afternoon and evening overlap with US Eastern time.
 
 ## Working arrangements and work authorization
 
-Arash can work remotely for a company located anywhere in the world as a contractor, or through an employer-of-record service, with no visa needed. He has done this before: his most recent role, Lead Backend Engineer at Hypersonic Laboratories, was with a UK company under a contractor agreement. Arash is open to full-time and contract roles.
+Arash can work remotely for a company located anywhere in the world as a contractor, or through an employer-of-record service, with no visa needed. He has done this before: his most recent role, Lead Backend Engineer at Hypersonic Laboratories, was with a UK company under a contractor agreement. Arash is open to remote full-time roles and to B2B or contract work.
 
 ## Relocation and visa sponsorship
 
@@ -14,7 +14,7 @@ Arash is open to relocating worldwide, with the UAE and EU countries among his p
 
 ## Availability
 
-Arash is available to start immediately.
+Arash is available to start immediately: his contract with Hypersonic Laboratories ended in September 2026.
 
 ## How Arash works
 
@@ -31,4 +31,4 @@ Arash is available to start immediately.
 
 ## Languages Arash speaks
 
-Arash speaks Persian as his native language and works in English professionally.
+Arash speaks Persian as his native language and works in English professionally, at C1 level.
