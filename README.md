@@ -70,9 +70,10 @@ flowchart LR
 
 ## Evaluation
 
-[`evals/cases.toml`](evals/cases.toml) holds 34 test questions: plain facts,
+[`evals/cases.toml`](evals/cases.toml) holds 48 test questions: plain facts,
 paraphrased and vague questions, personal details the knowledge base does not
-cover, off-topic questions and prompt injections. `uv run rag-me eval` runs each
+cover, off-topic questions and 10 prompt-injection attacks (forged sources, fake
+system messages, role-play, planted contact details and more). `uv run rag-me eval` runs each
 one through the real pipeline and scores three stages separately, so a failure
 points at its cause:
 

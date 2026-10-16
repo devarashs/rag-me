@@ -92,4 +92,11 @@ current item.
 - [ ] Re-ranking of retrieved chunks
 - [ ] Query rewriting for vague or multi-part questions
 - [ ] Request tracing (Langfuse free tier)
-- [ ] Prompt-injection hardening
+- [ ] Prompt-injection hardening  <-- in progress
+      Red team (2026-10-16): 12 attacks run through the real pipeline (forged
+      source block, fake SYSTEM message, instruction and source dumps, role-play
+      as Arash, confirming a false claim, a planted contact address, French
+      injection, HTML/script, opinion bait, a "negative review"). All resisted;
+      the negative review was answered only with the published gaps, neutrally.
+      No defensive code needed yet; 7 attacks added to evals/cases.toml as
+      permanent regression cases. Remaining: a graded run of them (judge quota).
