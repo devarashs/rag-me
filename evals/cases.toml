@@ -244,6 +244,42 @@ expect = "answer"
 relevant_chunks = ["05-skills.md#arash-s-front-end-and-desktop-experience"]
 expected_facts = ["used react-admin for building admin panels"]
 
+# --- IT operations and tool administration ----------------------------------------
+
+[[case]]
+id = "admin-tools"
+category = "fact"
+question = "What project management tools has Arash administered?"
+expect = "answer"
+relevant_chunks = [
+  "05-skills.md#arash-s-it-operations-and-tool-administration-experience",
+  "02-experience-hypersonic.md#team-tools-and-it-operations-hypersonic-laboratories",
+  "09-faq.md#has-arash-administered-team-tools-like-jira-linear-or-google-workspace",
+]
+expected_facts = ["Linear", "Jira", "Trello"]
+
+[[case]]
+id = "clickup"
+category = "fact"
+question = "Has Arash used ClickUp?"
+expect = "answer"
+relevant_chunks = [
+  "05-skills.md#arash-s-it-operations-and-tool-administration-experience",
+  "09-faq.md#has-arash-administered-team-tools-like-jira-linear-or-google-workspace",
+]
+expected_facts = ["used ClickUp as a regular user, not as an administrator"]
+
+[[case]]
+id = "zapier"
+category = "fact"
+question = "Has Arash used Zapier?"
+expect = "answer"
+relevant_chunks = [
+  "05-skills.md#arash-s-it-operations-and-tool-administration-experience",
+  "09-faq.md#does-arash-have-it-operations-or-automation-experience-make-zapier",
+]
+expected_facts = ["his automation-platform experience is with Make rather than Zapier"]
+
 # --- paraphrased, multi-section and vague questions ---------------------------------
 
 [[case]]
