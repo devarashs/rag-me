@@ -216,14 +216,19 @@ def chunk_with(chunk_id: str, body: str, vector: list[float]) -> EmbeddedChunk:
 
 @pytest.fixture
 def corpus_with_one_rare_term(migrated_schema_connection) -> psycopg.Connection:
-    """Six sections that all mention Arash. Only the launcher one names Sentry, and
-    its vector points away from the query, as a multi-topic section's would."""
+    """Ten sections that all mention Arash. Only the launcher one names Sentry (one
+    section in ten, under the 15% distinctive-term cutoff), and its vector points
+    away from the query, as a multi-topic section's would."""
     rows = [
         chunk_with("a.md#faq-start", "Arash can start immediately.", direction(1.0, 0.0)),
         chunk_with("a.md#faq-go", "Arash writes Go for networking tools.", direction(0.98, 0.2)),
         chunk_with("a.md#faq-ai", "Arash built AI products with agents.", direction(0.95, 0.3)),
         chunk_with("a.md#faq-tests", "Arash wrote thousands of tests.", direction(0.9, 0.4)),
         chunk_with("a.md#faq-mcp", "Arash built an MCP server for agents.", direction(0.85, 0.5)),
+        chunk_with("a.md#faq-go-more", "Arash used Go for tunnels.", direction(0.8, 0.6)),
+        chunk_with("a.md#faq-stack", "Arash uses NestJS and Postgres.", direction(0.75, 0.66)),
+        chunk_with("a.md#faq-lead", "Arash led backend work.", direction(0.7, 0.71)),
+        chunk_with("a.md#faq-remote", "Arash works remotely.", direction(0.6, 0.8)),
         chunk_with(
             "b.md#launcher",
             "Arash built the Electron launcher with auto-updates, code signing, delta "
@@ -275,13 +280,23 @@ def test_questions_without_useful_terms_fall_back_to_vector_order(
     corpus_with_one_rare_term, question: str
 ) -> None:
     hybrid = PostgresChunkStore(corpus_with_one_rare_term).search(
-        question, direction(1.0, 0.0), limit=6
+        question, direction(1.0, 0.0), limit=10
     )
     vector = PostgresChunkStore(corpus_with_one_rare_term, hybrid_search=False).search(
-        question, direction(1.0, 0.0), limit=6
+        question, direction(1.0, 0.0), limit=10
     )
 
     assert [r.chunk.chunk_id for r in hybrid] == [r.chunk.chunk_id for r in vector]
+
+
+def test_common_question_terms_do_not_crowd_out_a_rare_one(corpus_with_one_rare_term) -> None:
+    # "used" stems to "use", which appears in two of the ten sections (20%), above
+    # the 15% cutoff, so only "sentri" counts and the launcher stays near the top.
+    results = PostgresChunkStore(corpus_with_one_rare_term).search(
+        "Has Arash used Sentry?", direction(1.0, 0.0), limit=2
+    )
+
+    assert "b.md#launcher" in [r.chunk.chunk_id for r in results]
 
 
 def test_hybrid_results_are_unique_and_capped(corpus_with_one_rare_term) -> None:

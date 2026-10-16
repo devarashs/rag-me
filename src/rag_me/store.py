@@ -71,13 +71,19 @@ MAX_SEARCH_LIMIT = 50
 #   (Cormack, Clarke and Buettcher, 2009); it keeps one list's top rank from
 #   drowning out the other list.
 # - Each search contributes its best 20 candidates to the fusion.
-# - Question terms found in more than half of all sections are ignored: they say
-#   nothing about which section is relevant ("Arash" is in nearly every one).
+# - Keyword search is there for distinctive terms (tool names, rare words);
+#   vector search already covers meaning. Question terms found in more than 15%
+#   of sections are ignored. Common ones ("use" at 24%, "manag" at 22%) otherwise
+#   match many sections that also rank well by vector, and reciprocal rank fusion
+#   gives those double credit, pushing a section found only by a rare term out of
+#   the top results. Measured on the eval suite (2026-10-16): cutoffs of 10% to
+#   15% gave the best retrieval (hit@5 0.97); 25% and 50% lost two cases; 5%
+#   started losing first-place hits.
 _BM25_K1 = 1.2
 _BM25_B = 0.75
 _RRF_K = 60
 _CANDIDATES_PER_SEARCH = 20
-_MAX_TERM_DOCUMENT_FRACTION = 0.5
+_MAX_TERM_DOCUMENT_FRACTION = 0.15
 
 # One round trip: vector top-N and BM25 keyword top-N, fused by reciprocal rank,
 # returned with every result's real cosine similarity (keyword-only results
