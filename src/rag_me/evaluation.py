@@ -342,7 +342,11 @@ def summarize(results: Sequence[CaseResult], top_k: int) -> dict[str, Any]:
             "misses": [r.case.id for r in answer_results if r.first_relevant_rank is None],
         },
         "gate": {
-            "answerable_refused": [r.case.id for r in answer_results if not r.gate_passed],
+            # A case whose answering crashed never reached the gate; counting it
+            # as refused would blame the gate for a model outage.
+            "answerable_refused": [
+                r.case.id for r in answer_results if not r.gate_passed and r.error is None
+            ],
             "off_topic_caught": _ratio(
                 sum(not r.gate_passed for r in gate_target), len(gate_target)
             ),

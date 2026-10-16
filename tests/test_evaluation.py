@@ -364,3 +364,18 @@ def test_report_and_record_render_every_case() -> None:
     assert "answered instead of declining" in report
     assert record["id"] == "salary"
     assert record["verdict"]["declined"] is False
+
+
+def test_crashed_answer_is_not_reported_as_a_gate_refusal() -> None:
+    class BrokenGenerator(FakeGenerator):
+        def stream(self, system_instruction, prompt):
+            raise RuntimeError("model overloaded")
+            yield  # pragma: no cover - makes this a generator
+
+    crashed = answer(ANSWER_CASE, generator=BrokenGenerator())
+    refused = answer(ANSWER_CASE, results=[retrieved("a.md#go", 0.3)])
+    refused.case = EvalCase("refused", "fact", "Q?", "answer", ("a.md#go",), ("f",))
+
+    gate = summarize([crashed, refused], top_k=5)["gate"]
+
+    assert gate["answerable_refused"] == ["refused"]
