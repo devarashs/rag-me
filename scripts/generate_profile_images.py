@@ -24,10 +24,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
 # Crop boxes as fractions of the source square (left, top, right, bottom), tuned
-# for the current photo: the face sits near the centre. "portrait" keeps head and
+# for the current photo (images/profile.png): head and shoulders, face upper centre. "portrait" keeps head and
 # shoulders for larger images; "face" is tighter so a 16px favicon is still a face.
-PORTRAIT_CROP = (0.21, 0.24, 0.79, 0.82)
-FACE_CROP = (0.30, 0.28, 0.70, 0.68)
+PORTRAIT_CROP = (0.14, 0.09, 0.86, 0.81)
+FACE_CROP = (0.19, 0.11, 0.75, 0.67)
 
 # Brand colours from web/styles.css (the indigo gradient and slate text).
 GRADIENT_START = (85, 88, 232)
