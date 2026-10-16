@@ -79,7 +79,16 @@ current item.
       cases (sentry, twilio, onnx, react-admin, kubernetes): 2/5 -> 5/5 with
       HYBRID_SEARCH=false vs true. Caveat: keyword-only finds land at rank ~5,
       the last slot, because RRF ties go to higher vector similarity.
-      Remaining: re-grade the cases the judge quota cut off on 2026-10-09.
+      Follow-up (2026-10-16): new IT-ops content pushed "sentry" and
+      "managed-people" out of the top 5, because common question terms ("use" in
+      24% of sections, "manag" in 22%) still counted as keywords and gave
+      generic sections double RRF credit. Keyword terms are now limited to
+      those in at most 15% of sections; a sweep over the 32 answer cases showed
+      10-15% best (hit@5 0.91 -> 0.97, MRR 0.89 -> 0.92), 25-50% losing two
+      cases and 5% losing first-place hits. Chosen on the eval set itself, so
+      treat it as measured, not proven.
+      Remaining: a fully graded run; Gemini returned 503s and exhausted the
+      judge quota on 2026-10-15 and 2026-10-16, so most fact cases are ungraded.
 - [ ] Re-ranking of retrieved chunks
 - [ ] Query rewriting for vague or multi-part questions
 - [ ] Request tracing (Langfuse free tier)
